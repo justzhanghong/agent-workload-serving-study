@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1070" viewBox="0 0 1560 1070">
+<rect width="100%" height="100%" fill="white"/>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#7b8492"/></marker></defs>
+<text x="780.0" y="53" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="32" fill="#AF2E3D">Coding / Work Agent：执行器与评测边界</text>
+<text x="780.0" y="91" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="19" fill="#666d79">方法示意，依据 SWE-agent [32]、Agentless [35]、OpenHands / Versa [36,47] 重绘；不是原项目完整架构。</text>
+<rect x="25" y="135" width="480" height="735" rx="12" fill="#fffdfd" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265" y="181" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="23" fill="#AF2E3D">SWE-agent：ACI 交互闭环</text>
+<rect x="540" y="135" width="480" height="735" rx="12" fill="#fffdfd" stroke="#E97F68" stroke-width="2"/>
+<text x="780" y="181" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="23" fill="#E97F68">Agentless：固定阶段</text>
+<rect x="1055" y="135" width="480" height="735" rx="12" fill="#fffdfd" stroke="#CB5979" stroke-width="2"/>
+<text x="1295" y="181" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="23" fill="#CB5979">OpenHands / Versa：通用工具</text>
+<rect x="70" y="235" width="390" height="85" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="284.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">模型根据观察选择下一步</text>
+<polyline points="265,323 265,365" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="70" y="372" width="390" height="85" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="421.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">Agent-Computer Interface</text>
+<polyline points="265,460 265,500" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="70" y="508" width="390" height="110" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="553.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">仓库搜索 / 阅读 / 编辑</text>
+<text x="265.0" y="586.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">命令执行 / 测试</text>
+<polyline points="265,621 265,663" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="70" y="671" width="390" height="85" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="720.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">工具结果与新观察</text>
+<polyline points="70,713 47,713 47,278 67,278" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="585" y="260" width="390" height="100" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="317.04" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">定位相关文件与代码</text>
+<polyline points="780,363 780,420" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="585" y="430" width="390" height="100" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="487.04" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">生成修复候选</text>
+<polyline points="780,533 780,590" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="585" y="600" width="390" height="100" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="657.04" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">验证与筛选补丁</text>
+<text x="780" y="804" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#646b78">阶段固定，可比较多候选与验证预算</text>
+<rect x="1100" y="235" width="390" height="100" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="292.04" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">模型与事件 / 执行编排</text>
+<polyline points="1295,338 1295,383" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1100" y="390" width="390" height="85" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="439.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">代码编辑 / 执行 / 终端</text>
+<rect x="1100" y="510" width="390" height="85" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="559.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">搜索 / 视觉网页浏览</text>
+<rect x="1100" y="630" width="390" height="85" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="679.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">文件访问 / 沙盒 / 工件</text>
+<polyline points="1493,673 1515,673 1515,285 1493,285" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1295" y="804" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#646b78">同一工具平台连接 Coding 与 Work</text>
+<polyline points="265,873 265,911" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<polyline points="780,873 780,911" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<polyline points="1295,873 1295,911" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<rect x="40" y="920" width="1480" height="100" rx="12" fill="#f7f3f6" stroke="#AF2E3D" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="780.0" y="960.72" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#263040">评测边界：固定题目、初态与预算 → 保存候选 / 轨迹 → 测试、工件或业务终态验收</text>
+<text x="780.0" y="992.72" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#263040">分开执行器效果、模型效果与环境故障；自报完成不是独立验收。</text>
+</svg>

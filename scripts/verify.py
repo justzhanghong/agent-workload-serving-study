@@ -14,6 +14,7 @@ import statistics
 from analyze import ROOT, load, metrics
 
 CHECKS = []
+EXCLUDED = {".git", "__pycache__", ".venv", ".delivery"}
 
 
 def require(condition, name):
@@ -121,6 +122,36 @@ def main():
         close(r["cache_hit_percent"], 100*r["cached_tokens"]/r["prompt_tokens_api_sum"], "notification control cache arithmetic")
     provenance = load("provenance.json")
     require(len(provenance["sourceFileSha256"]) == 9 and all(re.fullmatch("[a-f0-9]{64}", x) for x in provenance["sourceFileSha256"].values()), "9 input file fingerprints")
+    literature = load("literature.json")
+    works = literature["works"]
+    refs = [work["ref"] for work in works]
+    grouped = [ref for group in literature["focusGroups"] for ref in group["refs"]]
+    require(len(works) == len(set(refs)) == 43, "43 unique reviewed works")
+    require(sorted(grouped) == sorted(refs), "literature focus groups cover each work once")
+    require(refs.count(1) == 1 and 2 not in refs, "papers.cool discovery not double counted")
+    require([group["name"] for group in literature["focusGroups"]][:2] == ["Coding与终端工程","Work与企业工作流"], "Coding/Work literature first")
+    require(set(map(int,re.findall(r"^\[(\d+)\] ",report,re.M))) == set(range(1,48)), "47 report reference entries")
+    index = (ROOT/"docs/literature-index.md").read_text(encoding="utf-8")
+    bib = (ROOT/"references.survey.bib").read_text(encoding="utf-8")
+    for work in works:
+        require(work["source"].startswith("https://") and work["source"] in index, work["name"]+" linked primary source")
+        require(all(work.get(k) for k in ("title","authors","method","measure","boundary")), work["name"]+" review fields")
+        if work["ref"] >= 8:
+            require(f'@misc{{surveyRef{work["ref"]},' in bib and work["title"] in report, work["name"]+" report and BibTeX")
+    for name in ("SWE-bench","SWE-agent","Agentless","OpenHands","WorkArena","TheAgentCompany","CRMArena-Pro","SpreadsheetBench","PaperBench"):
+        require(name in report.split("## 3. 方法")[0], name+" in focused related work")
+    readme = (ROOT/"README.md").read_text(encoding="utf-8")
+    require("figures/09_evaluation_taxonomy.png" in readme and "| 研究主线 |" in readme, "README foregrounds survey diagram and matrix")
+    require(readme.index("figures/09_") < readme.index("figures/01_"), "literature before experimental figure in README")
+    pdf_manifest = json.loads((ROOT/"paper/report_pdf.json").read_text(encoding="utf-8"))
+    pdf_path = ROOT/"paper/report.zh-CN.pdf"
+    require(pdf_path.read_bytes().startswith(b"%PDF-") and pdf_path.stat().st_size > 100000, "nontrivial PDF")
+    require(pdf_manifest["sourceSha256"] == hashlib.sha256((ROOT/pdf_manifest["source"]).read_bytes()).hexdigest(), "PDF source Markdown synchronized")
+    require(pdf_manifest["pdfSha256"] == hashlib.sha256(pdf_path.read_bytes()).hexdigest(), "PDF file fingerprint")
+    require(pdf_manifest["pageCount"] > 10 and pdf_manifest["outlineCount"] >= 40 and all(pdf_manifest["checks"].values()), "PDF build content/layout checks recorded")
+    require(len(pdf_manifest["embeddedFiguresSha256"]) == 11, "all 11 figures embedded in PDF")
+    for name, expected in pdf_manifest["embeddedFiguresSha256"].items():
+        require(expected == hashlib.sha256((ROOT/name).read_bytes()).hexdigest(), name+" PDF figure synchronized")
     require(all(f"## {i}. {name}" in report for i,name in enumerate(["引言","相关工作","方法","实验","实验结果"],1)), "required paper sections")
     require("https://arxiv.org/pdf/2608.15127" in report and "https://papers.cool/arxiv/search?highlight=1&query=" in report, "both requested literature links")
     v41_c56 = next(r for r in replay["runs"] if r["model"] == replay["models"]["v41"] and r["concurrency"] == 56)
@@ -130,6 +161,7 @@ def main():
         vals = [sum(c[field] for c in cs) for field in ("modelCalls","toolCalls","auxiliaryCalls","inputTokens","cachedTokens","outputTokens")]
         require("| " + " | ".join([{"v41":"V4.1","v4":"V4","qwen":"Qwen"}[key], *map(str,vals)]) + " |" in report, key+" report token totals")
     for doc in ROOT.rglob("*.md"):
+        if any(part in EXCLUDED for part in doc.relative_to(ROOT).parts): continue
         text = doc.read_text(encoding="utf-8")
         require("**" not in text and "<br>" not in text, str(doc.relative_to(ROOT))+" plain formatting")
         for target in re.findall(r"\]\(([^)]+)\)", text):
@@ -141,7 +173,7 @@ def main():
     deny = [r"/nfs/",r"/data/ssd",r"/home/",r"C:\\Users",r"(?i)bearer\s+[A-Za-z0-9]",r"(?i)(api[_-]?key|password|authorization)\s*[=:]\s*[\"']"]
     for directory in ("data","paper","docs","tables"):
         for path in (ROOT/directory).rglob("*"):
-            if not path.is_file(): continue
+            if not path.is_file() or path.suffix not in (".md", ".json", ".csv", ".txt"): continue
             text = path.read_text(encoding="utf-8")
             require(not any(re.search(p,text) for p in deny), str(path.relative_to(ROOT))+" no private paths/credentials")
             for ip in re.findall(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])", text):
@@ -155,11 +187,12 @@ def main():
             require(not re.search(r'"(?:messages|content|checkpoint|workspaceId|api_base|request_id|tool_use_id)"\s*:',text), path.name+" no raw message/deployment fields")
     pngs = sorted((ROOT/"figures").glob("*.png"))
     svgs = sorted((ROOT/"figures").glob("*.svg"))
-    require(len(pngs) == len(svgs) == 8, "8 PNG/SVG pairs")
+    require(len(pngs) == len(svgs) == 11, "8 experimental and 3 survey PNG/SVG pairs")
+    require({p.stem for p in pngs} == {p.stem for p in svgs}, "matching figure pairs")
     for path in pngs:
         require(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") and path.stat().st_size > 10000, path.name+" valid nontrivial PNG")
-    fingerprints = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.rglob("*")) if p.is_file() and p.name != "verification.json" and not any(part in (".git","__pycache__",".venv",".delivery") for part in p.relative_to(ROOT).parts)}
-    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "figurePairs":8, "independentRawEvidenceAudit":False, "scope":"Released numeric evidence and report consistency only", "filesSha256":fingerprints}
+    fingerprints = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.rglob("*")) if p.is_file() and p.name != "verification.json" and not any(part in EXCLUDED for part in p.relative_to(ROOT).parts)}
+    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "reviewWorks":43,"figurePairs":11,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence, literature structure and report/PDF consistency only; not an independent source audit", "filesSha256":fingerprints}
     (ROOT/"verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k != "filesSha256"},ensure_ascii=False))
 

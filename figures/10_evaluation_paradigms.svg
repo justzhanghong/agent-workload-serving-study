@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1020" viewBox="0 0 1560 1020">
+<rect width="100%" height="100%" fill="white"/>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#7b8492"/></marker></defs>
+<text x="780.0" y="53" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="32" fill="#AF2E3D">三种互补实验范式：同一工作，三个观察切面</text>
+<text x="780.0" y="91" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="19" fill="#666d79">抽象自 AgentX、Coding / Work 任务基准及 AgentSysBench / AgentSight；虚线为可选或范围外。</text>
+<rect x="25" y="135" width="480" height="800" rx="12" fill="#fffdfd" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265" y="181" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#AF2E3D">A  固定轨迹回放</text>
+<rect x="540" y="135" width="480" height="800" rx="12" fill="#fffdfd" stroke="#E97F68" stroke-width="2"/>
+<text x="780" y="181" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#E97F68">B  任务自主闭环</text>
+<rect x="1055" y="135" width="480" height="800" rx="12" fill="#fffdfd" stroke="#CB5979" stroke-width="2"/>
+<text x="1295" y="181" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#CB5979">C  全栈关联与生产补充</text>
+<rect x="65" y="235" width="400" height="85" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="284.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">固定请求、长度、前缀结构</text>
+<polyline points="265,323 265,364" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="65" y="370" width="400" height="85" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="419.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">并发 / 到达计划</text>
+<polyline points="265,458 265,499" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="65" y="505" width="400" height="85" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="554.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">推理服务与 KV 缓存</text>
+<polyline points="265,593 265,634" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="65" y="640" width="400" height="85" rx="12" fill="#fff7f8" stroke="#AF2E3D" stroke-width="2"/>
+<text x="265.0" y="689.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">延迟 / 吞吐 / 缓存</text>
+<rect x="1095" y="235" width="400" height="85" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="284.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">任务、模型、工具事件</text>
+<polyline points="1295,323 1295,364" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1095" y="370" width="400" height="85" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="419.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">状态与 CPU / GPU / I/O</text>
+<polyline points="1295,458 1295,499" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1095" y="505" width="400" height="85" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="554.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">身份、时间与依赖关联</text>
+<polyline points="1295,593 1295,634" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1095" y="640" width="400" height="85" rx="12" fill="#fff7f8" stroke="#CB5979" stroke-width="2"/>
+<text x="1295.0" y="689.54" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">关键路径 / 状态寿命 / 质量</text>
+<rect x="65" y="815" width="400" height="83" rx="12" fill="#fafafa" stroke="#999fa9" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="265.0" y="862.9" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">不验证新模型是否解对任务</text>
+<rect x="590" y="235" width="380" height="80" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="281.72" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#263040">任务与可恢复的初始环境</text>
+<polyline points="780,318 780,354" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="590" y="360" width="380" height="80" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="406.72" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#263040">Agent + 模型 + 执行接口</text>
+<polyline points="780,443 780,479" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="590" y="485" width="380" height="80" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="531.72" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#263040">代码 / 浏览器 / 业务工具</text>
+<polyline points="780,568 780,604" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="590" y="610" width="380" height="80" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="656.72" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#263040">观察、日志与环境状态</text>
+<polyline points="590,650 562,650 562,400 587,400" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="570" y="535" text-anchor="end" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="17" fill="#777">循环</text>
+<polyline points="780,695 780,741" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="590" y="748" width="380" height="85" rx="12" fill="#fff7f8" stroke="#E97F68" stroke-width="2"/>
+<text x="780.0" y="797.22" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#263040">结束 / 停止 → 独立验收</text>
+<text x="780" y="885" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#646b78">路径可变：比较真实工作结果</text>
+<rect x="1095" y="815" width="400" height="83" rx="12" fill="#fafafa" stroke="#999fa9" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1295.0" y="862.9" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">观测相关性 ≠ 优化因果证据</text>
+<text x="780" y="983" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="21" fill="#AF2E3D">先用回放隔离引擎因素，再用任务闭环看端到端收益；生产等待与长期状态需单独补充。</text>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1040" viewBox="0 0 1560 1040">
+<rect width="100%" height="100%" fill="white"/>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#7b8492"/></marker></defs>
+<text x="780.0" y="53" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="32" fill="#AF2E3D">Coding / Work Agent：评测对象与方法体系</text>
+<text x="780.0" y="91" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="19" fill="#666d79">任务主线优先；服务、观测与可信验收横向支撑。非论文原图，非新增实验。</text>
+<rect x="40" y="150" width="480" height="265" rx="12" fill="#fcf9fa" stroke="#AF2E3D" stroke-width="2"/>
+<text x="280" y="195" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#AF2E3D">Coding 与终端工程</text>
+<text x="280" y="255" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">仓库修复 / 多文件修改 / 运行环境</text>
+<text x="280" y="286" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">SWE-bench / Pro / Live</text>
+<text x="280" y="317" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">Terminal-Bench / SWE-agent / OpenHands</text>
+<rect x="550" y="150" width="480" height="265" rx="12" fill="#fcf9fa" stroke="#E97F68" stroke-width="2"/>
+<text x="790" y="195" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#E97F68">Work 与企业工作流</text>
+<text x="790" y="255" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">企业应用 / 浏览器 / 桌面 / 文件</text>
+<text x="790" y="286" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">WorkArena / TheAgentCompany / CRM</text>
+<text x="790" y="317" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">OSWorld / SpreadsheetBench / 浏览检索</text>
+<rect x="1060" y="150" width="480" height="265" rx="12" fill="#fcf9fa" stroke="#CB5979" stroke-width="2"/>
+<text x="1300" y="195" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#CB5979">科研与 ML 工程</text>
+<text x="1300" y="255" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">编写程序 / 训练 / 实验 / 复现</text>
+<text x="1300" y="286" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">MLE-bench / ScienceAgentBench</text>
+<text x="1300" y="317" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">PaperBench：分层检查复现产物</text>
+<rect x="40" y="465" width="480" height="265" rx="12" fill="#fcf9fa" stroke="#BDA9C4" stroke-width="2"/>
+<text x="280" y="510" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#BDA9C4">服务与可观测性</text>
+<text x="280" y="570" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">固定轨迹 / 推理服务 / 全栈测量</text>
+<text x="280" y="601" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">AgentX / AgentSysBench / AgentSight</text>
+<text x="280" y="632" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">状态管理 / 依赖 / CPU、GPU、I/O</text>
+<rect x="550" y="465" width="480" height="265" rx="12" fill="#fcf9fa" stroke="#CB5979" stroke-width="2"/>
+<text x="790" y="510" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#CB5979">评测方法与可靠性</text>
+<text x="790" y="570" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">过程进展 / 重复运行 / 独立验收</text>
+<text x="790" y="601" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">规则、安全、基础设施与失败分类</text>
+<text x="790" y="632" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">多角色依赖和任务关键路径</text>
+<rect x="1060" y="465" width="480" height="265" rx="12" fill="#fcf9fa" stroke="#a3a8b1" stroke-width="2"/>
+<text x="1300" y="510" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="25" fill="#a3a8b1">普通对话与组件：简要背景</text>
+<text x="1300" y="570" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">聊天记忆、函数调用等只作补充</text>
+<text x="1300" y="601" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">不能代替代码、工件与业务终态验收</text>
+<text x="1300" y="632" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#263040">本综述不展开普通聊天能力排名</text>
+<polyline points="780,750 780,790" fill="none" stroke="#7b8492" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="805" width="1480" height="150" rx="12" fill="#f7f3f6" stroke="#AF2E3D" stroke-width="2"/>
+<text x="780" y="843" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="24" fill="#AF2E3D">统一比较维度</text>
+<text x="780" y="889" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="22" fill="#263040">评测目标  /  任务与模态  /  执行驱动  /  状态范围  /  到达与资源  /  判定与重复</text>
+<text x="780" y="990" text-anchor="middle" font-family="&quot;WenQuanYi Micro Hei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif" font-size="20" fill="#646b78">读图结论：工作是否做对、服务是否够快、系统为何变慢，是互补问题，不能合成一个未经定义的排名。</text>
+</svg>
