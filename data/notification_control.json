@@ -1,0 +1,43 @@
+{
+  "clientVersion": "2.1.280 (Claude Code)",
+  "maxOutputTokens": 16,
+  "generatedToolsNotExecuted": true,
+  "results": [
+    {
+      "label": "before-notification-warm1",
+      "prompt_tokens_api_sum": 2664,
+      "cached_tokens": 0,
+      "cache_hit_percent": 0.0
+    },
+    {
+      "label": "before-notification-warm2",
+      "prompt_tokens_api_sum": 2664,
+      "cached_tokens": 2304,
+      "cache_hit_percent": 86.48648648648648
+    },
+    {
+      "label": "append-history-without-notification",
+      "prompt_tokens_api_sum": 2791,
+      "cached_tokens": 2560,
+      "cache_hit_percent": 91.72339663203152
+    },
+    {
+      "label": "append-history-with-notification",
+      "prompt_tokens_api_sum": 3053,
+      "cached_tokens": 0,
+      "cache_hit_percent": 0.0
+    },
+    {
+      "label": "same-notification-warm",
+      "prompt_tokens_api_sum": 3053,
+      "cached_tokens": 2560,
+      "cache_hit_percent": 83.85194890271863
+    },
+    {
+      "label": "without-notification-again",
+      "prompt_tokens_api_sum": 2791,
+      "cached_tokens": 2560,
+      "cache_hit_percent": 91.72339663203152
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "condition": "zero_prefix_cache_hit",
+  "concurrency": 4,
+  "aggregation": {
+    "runs_per_dataset_config": 3,
+    "bar": "mean of the three run-level client TTFT means",
+    "error_bar": "minimum to maximum of the three run-level client TTFT means",
+    "public_request_set": "same 112 request keys common to all six public runs",
+    "internal_request_set": "all 100 requests; session order preserved"
+  },
+  "datasets": {
+    "public": {
+      "V4 Decode-only": {
+        "runs": [
+          {
+            "run": "initial",
+            "requests": 112,
+            "ttft_mean_ms": 5150.984555151786,
+            "queue_mean_ms": 715.2655274964802,
+            "cached_tokens": 0.0,
+            "output_tokens": 80086
+          },
+          {
+            "run": "repeat_1",
+            "requests": 112,
+            "ttft_mean_ms": 5080.483771357142,
+            "queue_mean_ms": 510.1856593059243,
+            "cached_tokens": 0.0,
+            "output_tokens": 80086
+          },
+          {
+            "run": "repeat_2",
+            "requests": 112,
+            "ttft_mean_ms": 5329.473176607143,
+            "queue_mean_ms": 1320.6601133310219,
+            "cached_tokens": 0.0,
+            "output_tokens": 80086
+          }
+        ],
+        "ttft_mean_ms": 5186.980501038691,
+        "ttft_min_ms": 5080.483771357142,
+        "ttft_max_ms": 5329.473176607143,
+        "ttft_range_ms": 248.98940525000035,
+        "queue_mean_ms": 848.7037667111422,
+        "queue_min_ms": 510.1856593059243,
+        "queue_max_ms": 1320.6601133310219,
+        "queue_range_ms": 810.4744540250977,
+        "queue_vs_normal_cache": {
+          "normal_cache_queue_ms": 0.03,
+          "zero_hit_minus_normal_ms": 848.6737667111422
+        }
+      },
+      "V4.1 Piecewise": {
+        "runs": [
+          {
+            "run": "initial",
+            "requests": 112,
+            "ttft_mean_ms": 4254.846550241071,
+            "queue_mean_ms": 544.9114119307653,
+            "cached_tokens": 0.0,
+            "output_tokens": 80086
+          },
+          {
+            "run": "repeat_1",
+            "requests": 112,
+            "ttft_mean_ms": 4412.8707795089285,
+            "queue_mean_ms": 614.4760829400703,
+            "cached_tokens": 0.0,
+            "output_tokens": 80086
+          },
+          {
+            "run": "repeat_2",
+            "requests": 112,
+            "ttft_mean_ms": 4132.388315785714,
+            "queue_mean_ms": 561.6520643577262,
+            "cached_tokens": 0.0,
+            "output_tokens": 80086
+          }
+        ],
+        "ttft_mean_ms": 4266.701881845238,
+        "ttft_min_ms": 4132.388315785714,
+        "ttft_max_ms": 4412.8707795089285,
+        "ttft_range_ms": 280.4824637232141,
+        "queue_mean_ms": 573.6798530761872,
+        "queue_min_ms": 544.9114119307653,
+        "queue_max_ms": 614.4760829400703,
+        "queue_range_ms": 69.56467100930502,
+        "queue_vs_normal_cache": {
+          "normal_cache_queue_ms": 0.02,
+          "zero_hit_minus_normal_ms": 573.6598530761872
+        }
+      },
+      "comparison": {
+        "v4_minus_v41_ttft_ms": 920.2786191934529,
+        "v41_lower_pct_vs_v4": 17.742087501758824,
+        "ttft_ranges_overlap": false
+      }
+    },
+    "internal": {
+      "V4 Decode-only": {
+        "runs": [
+          {
+            "run": "initial",
+            "requests": 100,
+            "ttft_mean_ms": 6035.565459732898,
+            "queue_mean_ms": 869.6044691849966,
+            "cached_tokens": 0.0,
+            "output_tokens": 81567
+          },
+          {
+            "run": "repeat_1",
+            "requests": 100,
+            "ttft_mean_ms": 5059.693164436612,
+            "queue_mean_ms": 607.963955104351,
+            "cached_tokens": 0.0,
+            "output_tokens": 86082
+          },
+          {
+            "run": "repeat_2",
+            "requests": 100,
+            "ttft_mean_ms": 6237.284608234186,
+            "queue_mean_ms": 787.8110078838654,
+            "cached_tokens": 0.0,
+            "output_tokens": 91306
+          }
+        ],
+        "ttft_mean_ms": 5777.514410801232,
+        "ttft_min_ms": 5059.693164436612,
+        "ttft_max_ms": 6237.284608234186,
+        "ttft_range_ms": 1177.5914437975734,
+        "queue_mean_ms": 755.126477391071,
+        "queue_min_ms": 607.963955104351,
+        "queue_max_ms": 869.6044691849966,
+        "queue_range_ms": 261.6405140806455,
+        "queue_vs_normal_cache": {
+          "normal_cache_queue_ms": 120.44,
+          "zero_hit_minus_normal_ms": 634.6864773910711
+        }
+      },
+      "V4.1 Piecewise": {
+        "runs": [
+          {
+            "run": "initial",
+            "requests": 100,
+            "ttft_mean_ms": 5252.572515179636,
+            "queue_mean_ms": 780.1599571434781,
+            "cached_tokens": 0.0,
+            "output_tokens": 81187
+          },
+          {
+            "run": "repeat_1",
+            "requests": 100,
+            "ttft_mean_ms": 4900.697721880861,
+            "queue_mean_ms": 691.4540380379185,
+            "cached_tokens": 0.0,
+            "output_tokens": 68333
+          },
+          {
+            "run": "repeat_2",
+            "requests": 100,
+            "ttft_mean_ms": 4779.016959576402,
+            "queue_mean_ms": 608.047004310647,
+            "cached_tokens": 0.0,
+            "output_tokens": 77215
+          }
+        ],
+        "ttft_mean_ms": 4977.4290655456325,
+        "ttft_min_ms": 4779.016959576402,
+        "ttft_max_ms": 5252.572515179636,
+        "ttft_range_ms": 473.5555556032341,
+        "queue_mean_ms": 693.2203331640145,
+        "queue_min_ms": 608.047004310647,
+        "queue_max_ms": 780.1599571434781,
+        "queue_range_ms": 172.11295283283107,
+        "queue_vs_normal_cache": {
+          "normal_cache_queue_ms": 134.86,
+          "zero_hit_minus_normal_ms": 558.3603331640145
+        }
+      },
+      "comparison": {
+        "v4_minus_v41_ttft_ms": 800.0853452555993,
+        "v41_lower_pct_vs_v4": 13.848262217396057,
+        "ttft_ranges_overlap": true
+      }
+    }
+  },
+  "normal_cache_queue_reference_ms": {
+    "public": {
+      "V4 Decode-only": 0.03,
+      "V4.1 Piecewise": 0.02
+    },
+    "internal": {
+      "V4 Decode-only": 120.44,
+      "V4.1 Piecewise": 134.86
+    }
+  }
+}

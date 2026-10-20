@@ -1,0 +1,44 @@
+{
+  "replay_runs": 15,
+  "real_cases": 12,
+  "verified_requests": 2349,
+  "highest_tested_passing": {
+    "DeepSeek-V4.1-Flash": 56,
+    "DeepSeek-V4-Flash-0731": 48,
+    "Qwen3.8-27B": 48
+  },
+  "status_counts": {
+    "self-reported": 6,
+    "passed": 3,
+    "stopped": 3
+  },
+  "cache_events": {
+    "v41": {
+      "compaction": 5,
+      "input-growth": 7,
+      "system-prefix-change": 8
+    },
+    "v4": {
+      "compaction": 7,
+      "input-growth": 13,
+      "system-prefix-change": 26
+    },
+    "qwen": {
+      "compaction": 8,
+      "input-growth": 8,
+      "system-prefix-change": 12
+    }
+  },
+  "api_share_range_percent": [
+    3.0662323307543584,
+    16.84684915764694
+  ],
+  "tool_outside_api_share_range_percent": [
+    82.80388419471491,
+    96.78864165569053
+  ],
+  "graph_paired_server_delta_ms": {
+    "agentx": 221.1849349743196,
+    "mongo": 318.5993027326185
+  }
+}

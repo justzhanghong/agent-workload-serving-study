@@ -1,0 +1,16 @@
+{
+  "concurrency": 4,
+  "condition": "normal_prefix_cache",
+  "repeats": 1,
+  "datasets": {
+    "public": {
+      "v4_ttft_ms": 1816.54,
+      "v41_ttft_ms": 759.26
+    },
+    "internal": {
+      "v4_ttft_ms": 2376.24,
+      "v41_ttft_ms": 1441.73
+    }
+  },
+  "scope": "Historical small-subset chart values, not the later 2048-candidate capacity study. No normal-cache repeat distribution was collected."
+}
