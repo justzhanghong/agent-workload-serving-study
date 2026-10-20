@@ -66,12 +66,16 @@
       "method": "统一工作负载/服务栈说明与多组件测量，并补充生产轨迹",
       "measure": "端到端耗时、状态、资源与控制面行为",
       "boundary": "受控执行与生产观察回答互补问题，不互相替代",
-      "scope": "core"
+      "scope": "core",
+      "readmeFeatured": true,
+      "publicationDate": "2026-08-15",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2608.15127"
     },
     {
       "ref": 3,
       "name": "AgentX Harness",
-      "year": null,
+      "year": 2026,
       "group": "执行与服务系统",
       "title": "AgentX Harness",
       "authors": "SemiAnalysisAI",
@@ -79,7 +83,11 @@
       "method": "按轨迹长度和前缀共享结构回放模型请求",
       "measure": "推理延迟、吞吐及缓存行为",
       "boundary": "不自动恢复工具语义、真实等待或任务质量",
-      "scope": "core"
+      "scope": "core",
+      "readmeFeatured": true,
+      "publicationDate": "2026-08-24",
+      "dateBasis": "official-announcement",
+      "dateSource": "https://inferencex.semianalysis.com/blog/agentx-inferencexv3-does-cuda-moat"
     },
     {
       "ref": 5,
@@ -106,7 +114,11 @@
       "group": "多轮Workload与服务系统",
       "method": "真实Claude Code/Codex日志归一为session—用户请求—模型step，保留时间、token与工具元数据",
       "measure": "自主循环长度、上下文增长、append/new输入、工具长尾、跨用户间隙缓存复用",
-      "boundary": "开发者样本与特定提供商；append包含缓存未命中的旧历史，不等于全新信息"
+      "boundary": "开发者样本与特定提供商；append包含缓存未命中的旧历史，不等于全新信息",
+      "readmeFeatured": true,
+      "publicationDate": "2026-06-29",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2606.30560"
     },
     {
       "ref": 9,
@@ -120,7 +132,11 @@
       "group": "多轮Workload与服务系统",
       "method": "GitHub Copilot生产轨迹，区分用户轮次与轮内工具驱动循环",
       "measure": "轮内/跨轮命中、工具间隙与用户空闲、模型切换及压缩边界",
-      "boundary": "生产观测存在模型、路由和用户混杂；跨轮命中下降不自动等于HBM容量不足"
+      "boundary": "生产观测存在模型、路由和用户混杂；跨轮命中下降不自动等于HBM容量不足",
+      "readmeFeatured": true,
+      "publicationDate": "2026-07-30",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2608.00101"
     },
     {
       "ref": 10,
@@ -134,7 +150,11 @@
       "group": "多轮Workload与服务系统",
       "method": "贯通Agent侧与推理服务的端到端跟踪，比较模型与推理配置",
       "measure": "重复模型进入、缓存后的prefill/decode、工具读写阶段与持续KV状态",
-      "boundary": "缓存后decode占优是所测条件的观察，不是所有Agent部署的定律"
+      "boundary": "缓存后decode占优是所测条件的观察，不是所有Agent部署的定律",
+      "readmeFeatured": true,
+      "publicationDate": "2026-05-25",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2605.26297"
     },
     {
       "ref": 11,
@@ -148,7 +168,11 @@
       "group": "多轮Workload与服务系统",
       "method": "真实coding轨迹分析，结合前缀感知调度与工具元数据预测复用",
       "measure": "KV驱逐/重算、命中与整session完成时间",
-      "boundary": "收益依赖负载与资源；较高命中率本身不保证更好整题时间"
+      "boundary": "收益依赖负载与资源；较高命中率本身不保证更好整题时间",
+      "readmeFeatured": true,
+      "publicationDate": "2026-06-15",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2606.16824"
     },
     {
       "ref": 12,
@@ -162,7 +186,11 @@
       "group": "多轮Workload与服务系统",
       "method": "按恢复成本与排队影响选择性设置KV驻留TTL，结合程序级调度",
       "measure": "轮间等待、恢复开销、job完成时间、预测不准时的稳健性",
-      "boundary": "不能无限保留所有等待会话；需在复用与挤占活跃请求间权衡"
+      "boundary": "不能无限保留所有等待会话；需在复用与挤占活跃请求间权衡",
+      "readmeFeatured": true,
+      "publicationDate": "2025-11-04",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2511.02230"
     },
     {
       "ref": 13,
@@ -176,7 +204,11 @@
       "group": "多轮Workload与服务系统",
       "method": "将程序身份及已完成调用的服务信息送入调度器",
       "measure": "累计排队、队首阻塞、程序完成延迟和吞吐",
-      "boundary": "程序感知调度不同于只调单请求batch；非所有流程都预先已知"
+      "boundary": "程序感知调度不同于只调单请求batch；非所有流程都预先已知",
+      "readmeFeatured": true,
+      "publicationDate": "2025-02-19",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2502.13965"
     },
     {
       "ref": 14,
@@ -190,7 +222,11 @@
       "group": "多轮Workload与服务系统",
       "method": "双向交换harness的工作流/生命周期意图与engine的队列/KV状态",
       "measure": "缓存协同、运行模式、端到端延迟及质量约束",
-      "boundary": "协议不是固定优化策略；研究任务中的收益不等于已在本地接入"
+      "boundary": "协议不是固定优化策略；研究任务中的收益不等于已在本地接入",
+      "readmeFeatured": true,
+      "publicationDate": "2026-10-05",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2610.06597"
     },
     {
       "ref": 15,
@@ -204,7 +240,11 @@
       "group": "多轮Workload与服务系统",
       "method": "跨两类硬件刻画CPU/GPU执行，研究重叠微批与混合负载调度",
       "measure": "工具/编排CPU瓶颈、重叠、异构请求队首阻塞",
-      "boundary": "包括相邻Agent任务，不能把其CPU瓶颈直接套到每个coding/办公任务"
+      "boundary": "包括相邻Agent任务，不能把其CPU瓶颈直接套到每个coding/办公任务",
+      "readmeFeatured": true,
+      "publicationDate": "2025-11-01",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2511.00739"
     },
     {
       "ref": 16,
@@ -218,7 +258,11 @@
       "group": "多轮Workload与服务系统",
       "method": "Azure生产观察与受控框架实验结合，按执行结构和资源角色分析",
       "measure": "CPU—GPU碎片化、突发、局部性、角色化资源与状态换入",
-      "boundary": "负载受框架、任务、工具和模型组成共同影响，利用率相关不替代干预"
+      "boundary": "负载受框架、任务、工具和模型组成共同影响，利用率相关不替代干预",
+      "readmeFeatured": true,
+      "publicationDate": "2026-08-05",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2608.04458"
     },
     {
       "ref": 17,
@@ -285,7 +329,11 @@
       "method": "Semantic Variable暴露请求之间的数据流依赖",
       "measure": "应用端到端服务表现",
       "boundary": "需要应用信息，不等价于只调单请求batch大小",
-      "scope": "core"
+      "scope": "core",
+      "readmeFeatured": true,
+      "publicationDate": "2024-05-30",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2405.19888"
     },
     {
       "ref": 22,

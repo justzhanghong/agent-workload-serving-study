@@ -29,15 +29,22 @@
 
 ### 直接相关的Workload研究
 
-| 代表工作 | 研究对象与切面 | 重点学到的分析方法 |
-|---|---|---|
-| [TraceLab](https://arxiv.org/abs/2606.30560v2) | 真实Claude Code/Codex轨迹 | 分开session、用户需求和模型step；分析append、工具长尾与人类间隙 |
-| [Copilot生产轨迹](https://arxiv.org/abs/2608.00101v1) | 大规模用户轮次与轮内自主循环 | 分开轮内/跨轮命中，关联空闲、压缩和模型切换 |
-| [Agentic AI Workload Characteristics](https://arxiv.org/abs/2605.26297v2) | Agent—服务端端到端跟踪 | 测缓存后的真实计算结构、重复进入及工具行为阶段 |
-| [AgentSysBench](https://arxiv.org/abs/2608.15127v1) | 受控部署与生产多组件负载 | 模型之外的耗时、持久状态、控制面成本与工具冗余 |
-| [CacheWise](https://arxiv.org/abs/2606.16824v1)、[Continuum](https://arxiv.org/abs/2511.02230v7) | Coding/工具循环中的KV复用 | 将工具间隔、驻留/驱逐与整session耗时联合分析 |
-| [CPU-Centric Perspective](https://arxiv.org/abs/2511.00739v3)、[Architectural Implications](https://arxiv.org/abs/2608.04458v1) | CPU—GPU碎片化与异构工具阶段 | 定位宿主侧关键路径、突发、资源角色和共享干扰 |
-| [Parrot](https://arxiv.org/abs/2405.19888)、[Autellix](https://arxiv.org/abs/2502.13965v1)、[HEAR](https://arxiv.org/abs/2610.06597v1) | 工作流依赖、程序调度与跨层接口 | 把完成目标、生命周期意图与引擎队列/KV状态关联 |
+| 代表工作 | 日期 | 研究对象与切面 | 重点学到的分析方法 |
+|---|---|---|---|
+| [TraceLab](https://arxiv.org/abs/2606.30560v2) | 2026-06-29 | 真实Claude Code/Codex轨迹 | 分开session、用户需求和模型step；分析append、工具长尾与人类间隙 |
+| [Copilot生产轨迹](https://arxiv.org/abs/2608.00101v1) | 2026-07-30 | 大规模用户轮次与轮内自主循环 | 分开轮内/跨轮命中，关联空闲、压缩和模型切换 |
+| [Agentic AI Workload Characteristics](https://arxiv.org/abs/2605.26297v2) | 2026-05-25 | Agent—服务端端到端跟踪 | 测缓存后的真实计算结构、重复进入及工具行为阶段 |
+| [AgentSysBench](https://arxiv.org/abs/2608.15127v1) | 2026-08-15 | 受控部署与生产多组件负载 | 模型之外的耗时、持久状态、控制面成本与工具冗余 |
+| [AgentX](https://github.com/SemiAnalysisAI/agentx-harness) | [2026-08-24](https://inferencex.semianalysis.com/blog/agentx-inferencexv3-does-cuda-moat) | 真实coding轨迹的长度与前缀共享结构回放 | 保留会话依赖、上下文增长与复用；比较延迟约束下的吞吐/交互速度，回放不执行真实工具 |
+| [CacheWise](https://arxiv.org/abs/2606.16824v1) | 2026-06-15 | Coding循环中的KV压力与前缀复用 | 联合分析工具间隔、驱逐/重算及整session完成时间 |
+| [Continuum](https://arxiv.org/abs/2511.02230v7) | 2025-11-04 | 工具暂停期间的KV驻留与程序调度 | 用恢复/排队成本设置驻留TTL，验证整job时间与稳健性 |
+| [CPU-Centric Perspective](https://arxiv.org/abs/2511.00739v3) | 2025-11-01 | CPU工具/编排与CPU—GPU重叠 | 定位宿主侧关键路径和混合负载的队首阻塞 |
+| [Architectural Implications](https://arxiv.org/abs/2608.04458v1) | 2026-08-05 | 生产与受控环境中的碎片化执行 | 分析突发、资源角色、局部性和共享干扰 |
+| [Parrot](https://arxiv.org/abs/2405.19888) | 2024-05-30 | 应用数据流与模型请求依赖 | 将应用完成目标与请求调度、前缀共享关联 |
+| [Autellix](https://arxiv.org/abs/2502.13965v1) | 2025-02-19 | 程序级调度与累积等待 | 关联各次调用的服务历史，优化程序完成时间而非单次API |
+| [HEAR](https://arxiv.org/abs/2610.06597v1) | 2026-10-05 | Harness与engine的双向信息接口 | 交换工作流/生命周期意图和队列/KV状态，支持跨层协同 |
+
+日期口径：论文采用arXiv v1首次提交日期，不是当前修订版或会议日期；AgentX采用SemiAnalysis官方发布公告日期。表中链接仍指向本报告所引用的版本。
 
 ![等待期间的状态生命周期与跨层信息](figures/11_workload_state_lifecycle.png)
 

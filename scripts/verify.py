@@ -4,6 +4,7 @@
 This checks internal consistency, not independent access to withheld evidence.
 """
 from collections import Counter
+from datetime import date
 import hashlib
 import ipaddress
 import json
@@ -143,6 +144,18 @@ def main():
     for name in ("TraceLab","Copilot","CacheWise","Continuum","Autellix","HEAR","AgentSysBench","InferCept","CPU","KV"):
         require(name in report.split("## 3. 方法")[0], name+" in focused related work")
     readme = (ROOT/"README.md").read_text(encoding="utf-8")
+    featured = [w for w in works if w.get("readmeFeatured")]
+    featured_text = readme.split("### 直接相关的Workload研究",1)[1].split("![等待期间",1)[0]
+    featured_rows = [line for line in featured_text.splitlines() if line.startswith("| [")]
+    require(len(featured) == len(featured_rows) == 12, "12 separately dated featured workload works")
+    require("| 代表工作 | 日期 |" in featured_text, "featured workload table date column")
+    for work in featured:
+        require(date.fromisoformat(work["publicationDate"]).isoformat() == work["publicationDate"], work["name"]+" ISO publication date")
+        require(work["dateBasis"] in ("arxiv-v1-submission", "official-announcement") and work["dateSource"].startswith("https://"), work["name"]+" documented date source/basis")
+        matching = [row for row in featured_rows if re.sub(r"v\d+$","",re.search(r"\]\(([^)]+)\)",row).group(1)) == re.sub(r"v\d+$","",work["source"])]
+        require(len(matching) == 1 and work["publicationDate"] in matching[0].split("|")[2], work["name"]+" README date matches catalog")
+    agentx = next(w for w in featured if w["ref"] == 3)
+    require(agentx["dateBasis"] == "official-announcement" and agentx["publicationDate"] == "2026-08-24", "AgentX official announcement date distinguished from paper dates")
     require("figures/09_evaluation_taxonomy.png" in readme and "| 分析事项 |" in readme, "README foregrounds workload analysis diagram and matrix")
     require("figures/11_workload_state_lifecycle.png" in readme, "README state lifecycle diagram")
     for axis in ("循环与阶段","上下文演化","缓存与重算","间隔与状态","整任务关键路径","控制面与工具冗余","资源与阶段耦合","并发与有效收益"):
