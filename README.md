@@ -2,9 +2,34 @@
 
 面向Coding / Work Agent场景的多轮Workload分析调研，以及三模型服务回放与真实任务实验。
 
+应用目标：在prefill芯片方案已确定、decode芯片尚在设计的条件下，找出多轮Agent负载需要注意的计算、KV内存、互连与运行时瓶颈。
+
 [中文技术报告](paper/report.zh-CN.md) · [PDF下载](paper/report.zh-CN.pdf) · [Workload研究索引](docs/literature-index.md)
 
 [多轮Workload研究](#多轮workload研究应分析什么)与[本地实验结果](#本地实验与主要发现)并列展开。调研研究负载如何形成时间和资源压力，不评选哪个Coding/Work Agent能力更强；实验部分完整保留真实任务验收、耗时、调用、缓存和硬件结果。
+
+## Decode芯片设计：已有依据与待验证问题
+
+已有文献直接涉及多轮P/D分工。优先问题是：后续轮次仅新增少量输入时，送到P端处理，还是在D端利用已有KV更划算？其次，高命中不免除decode的历史KV访问；工具等待还会延长状态寿命。不能只按纯单token算子或峰值算力设计，也不能直接把GPU上的现象解释为ASIC结论。
+
+| 设计关注点 | 可直接引用的依据 | 需要针对目标芯片验证的量 |
+|---|---|---|
+| 小规模增量prefill与P/D交接 | [PPD](https://arxiv.org/abs/2603.13358v2)、[AMPD](https://arxiv.org/abs/2602.14516v2)，ICML 2026 | 本地/远程处理交叉阈值、decode干扰、历史访问和增量KV传输 |
+| 长上下文KV数据通路 | [TraceLab](https://arxiv.org/abs/2606.30560v2)、[vLLM DCP](https://vllm.ai/blog/2026-08-07-decode-context-parallelism) | attention真实访存、KV布局/副本、分片后的通信与收益 |
+| 等待期间的状态容量与恢复 | [CacheWise](https://arxiv.org/abs/2606.16824v1)、[Continuum](https://arxiv.org/abs/2511.02230v7) | 固定活跃batch后，暂停状态导致的驱逐/恢复与容量拐点 |
+| 主机供给与碎片化执行 | [Architectural Implications](https://arxiv.org/abs/2608.04458v1)、[HEAR](https://arxiv.org/abs/2610.06597v1) | 提交/调度间隙、突发恢复、优先级与计算通信重叠 |
+| 计算—内存—互连的投入取舍 | [LLMCompass](https://github.com/PrincetonUniversity/LLMCompass)、[HeteroPanacea](https://arxiv.org/abs/2608.03741v1) | 经实测校准的参数敏感性、功耗/面积/成本约束下的收益 |
+
+PPD的一类基线是单向P→D；AMPD远程路径必要时读取D端历史，再返回新增KV。不能说所有PD系统都会重算完整历史，也不能把“返回增量”说成完全没有历史传输。DCP是工程测量，HeteroPanacea的自定义NPU是模拟，LLMCompass是通用硬件方法；均非本地已验证的芯片设计结论。
+
+四组实验设计，均待执行：
+
+1. E1：固定历史长度与实际decode batch，拆解attention、FFN/MoE、量化、通信和提交开销，测真实时间与字节。
+2. E2：固定活跃batch，增加暂停会话和KV工作集，区分容量、卸载恢复带宽与驻留策略。
+3. E3：比较D端本地增量处理与P端远程处理，扫描增量长度、负载及链路，测后续轮次TTFT和其他请求的逐token尾延迟。
+4. E4：用实测校准模型，固定prefill方案，在可行的功耗/面积/成本约束内比较decode计算、内存及互连投入。
+
+完整依据见[报告第2.10节](paper/report.zh-CN.md)，输入、指标、独立重复和四组实验协议见同报告第3.6节。保留真实输出与轮间关系，不固定输出为1；以SLA内输出goodput及逐token尾延迟为主要判断，不能用含缓存输入的Total TPGS代替decode效率。尚无目标规格时只做参数化分析，不给出未经验证的GB或TB/s要求。本次仅更新调研和方案，未增加GPU测试结果。
 
 ## 多轮Workload研究：应分析什么
 
@@ -34,17 +59,21 @@
 | [HEAR](https://arxiv.org/abs/2610.06597v1) | 2026-10-05 | Harness与engine的双向信息接口 | 交换工作流/生命周期意图和队列/KV状态，支持跨层协同 |
 | [AgentX](https://github.com/SemiAnalysisAI/agentx-harness) | [2026-08-24](https://inferencex.semianalysis.com/blog/agentx-inferencexv3-does-cuda-moat) | 真实coding轨迹的长度与前缀共享结构回放 | 保留会话依赖、上下文增长与复用；比较延迟约束下的吞吐/交互速度，回放不执行真实工具 |
 | [AgentSysBench](https://arxiv.org/abs/2608.15127v1) | 2026-08-15 | 受控部署与生产多组件负载 | 模型之外的耗时、持久状态、控制面成本与工具冗余 |
+| [vLLM DCP](https://vllm.ai/blog/2026-08-07-decode-context-parallelism) | 2026-08-07 | 长上下文Agent轨迹下的官方工程测量 | 对照KV复制/序列分片，联合看容量、访存与通信 |
 | [Architectural Implications](https://arxiv.org/abs/2608.04458v1) | 2026-08-05 | 生产与受控环境中的碎片化执行 | 分析突发、资源角色、局部性和共享干扰 |
+| [HeteroPanacea](https://arxiv.org/abs/2608.03741v1) | 2026-08-04 | P/D与Attention/FFN异构配置模拟 | 结合阶段算子和互连建模；组件验证不能代替完整多轮服务验证 |
 | [Copilot生产轨迹](https://arxiv.org/abs/2608.00101v1) | 2026-07-30 | 大规模用户轮次与轮内自主循环 | 分开轮内/跨轮命中，关联空闲、压缩和模型切换 |
 | [TraceLab](https://arxiv.org/abs/2606.30560v2) | 2026-06-29 | 真实Claude Code/Codex轨迹 | 分开session、用户需求和模型step；分析append、工具长尾与人类间隙 |
 | [CacheWise](https://arxiv.org/abs/2606.16824v1) | 2026-06-15 | Coding循环中的KV压力与前缀复用 | 联合分析工具间隔、驱逐/重算及整session完成时间 |
 | [Agentic AI Workload Characteristics](https://arxiv.org/abs/2605.26297v2) | 2026-05-25 | Agent—服务端端到端跟踪 | 测缓存后的真实计算结构、重复进入及工具行为阶段 |
+| [PPD](https://arxiv.org/abs/2603.13358v2) | 2026-03-09 | 多轮P/D分离与增量prefill路由 | 测本地增量处理、decode干扰与KV交接之间的取舍 |
+| [AMPD](https://arxiv.org/abs/2602.14516v2) | 2026-02-16 | 多轮P/D部署、增量路由与调度 | 联合建模历史/增量、负载和传输，不能只看总ISL/OSL |
 | [Continuum](https://arxiv.org/abs/2511.02230v7) | 2025-11-04 | 工具暂停期间的KV驻留与程序调度 | 用恢复/排队成本设置驻留TTL，验证整job时间与稳健性 |
 | [CPU-Centric Perspective](https://arxiv.org/abs/2511.00739v3) | 2025-11-01 | CPU工具/编排与CPU—GPU重叠 | 定位宿主侧关键路径和混合负载的队首阻塞 |
 | [Autellix](https://arxiv.org/abs/2502.13965v1) | 2025-02-19 | 程序级调度与累积等待 | 关联各次调用的服务历史，优化程序完成时间而非单次API |
 | [Parrot](https://arxiv.org/abs/2405.19888) | 2024-05-30 | 应用数据流与模型请求依赖 | 将应用完成目标与请求调度、前缀共享关联 |
 
-日期口径：论文采用arXiv v1首次提交日期，不是当前修订版或会议日期；AgentX采用SemiAnalysis官方发布公告日期。表中链接仍指向本报告所引用的版本。
+日期口径：论文采用arXiv v1首次提交日期，不是当前修订版或会议日期；AgentX采用SemiAnalysis官方发布公告日期，vLLM DCP采用官方博客日期。表中链接仍指向本报告所引用的版本。表内区分轨迹、系统、工程和模拟研究；LLMCompass另作为通用硬件方法收录，不冒充Agent负载论文。
 
 ![等待期间的状态生命周期与跨层信息](figures/11_workload_state_lifecycle.png)
 
@@ -52,7 +81,7 @@
 
 ![固定回放、真实任务与生产全栈观察](figures/10_evaluation_paradigms.png)
 
-核心索引涵盖18项负载/系统研究与工具；SWE-bench、Terminal-Bench、WorkArena、TheAgentCompany仅作为4项场景背景，普通多轮聊天一笔带过。三图是文献方法的归纳重绘，不是论文原图或新增实验；研究口径与边界见报告第2节。文献中的优化收益不冒充本地实测。
+核心索引涵盖23项负载/系统研究、工具与硬件方法；SWE-bench、Terminal-Bench、WorkArena、TheAgentCompany仅作为4项场景背景，普通多轮聊天一笔带过。三图是文献方法的归纳重绘，不是论文原图或新增实验；研究口径与边界见报告第2节。文献中的优化收益不冒充本地实测。
 
 ## 本地实验与主要发现
 

@@ -112,7 +112,7 @@ def main():
         version = browser.version
     writer = PdfWriter(clone_from=BytesIO(raw))
     writer.add_metadata({"/Title":title,"/Author":"zhanghong",
-                         "/Subject":"Coding / Work Agent methods and serving experiments",
+                         "/Subject":"Coding / Work Agent serving evidence, decode-chip literature and planned bottleneck experiments",
                          "/SourceMarkdownSHA256":sha(source_bytes)})
     with TARGET.open("wb") as output: writer.write(output)
     reader = PdfReader(TARGET)
@@ -122,7 +122,9 @@ def main():
     compact = re.sub(r"\s+", "", full_text)
     required = ["摘要","1.引言","2.相关工作","Coding/Work",
                 "TraceLab","Copilot","CacheWise","Continuum","关键路径","状态生命周期",
-                "3.方法","4.实验","5.实验结果","结果解读：","6.讨论与局限","参考文献"]
+                "3.方法","4.实验","5.实验结果","结果解读：","6.讨论与局限","参考文献",
+                "PPD","AMPD","HeteroPanacea","LLMCompass","3.6.面向decode芯片",
+                "E1：Decode算子","E2：KV容量","E3：增量prefill","E4：经校准","待执行"]
     missing = [word for word in required if word not in compact]
     if missing: raise AssertionError("Missing PDF content: "+str(missing))
     blank = [i+1 for i,text in enumerate(page_text) if len(re.sub(r"\s+", "", text)) < 20]
@@ -149,7 +151,8 @@ def main():
     pages = sorted(set([0,1,2,len(extracted)-1]+[
         i for i,text in enumerate(page_text)
         if any(key in re.sub(r"\s+","",text) for key in
-               ("图R1：","图R2：","图R3：","图1：","结果解读："))]))
+               ("图R1：","图R2：","图R3：","图1：","结果解读：",
+                "2.10.面向decode芯片","3.6.面向decode芯片","3.6.4.E3","3.6.5.E4"))]))
     for number in pages:
         extracted[number].get_pixmap(matrix=fitz.Matrix(1.4,1.4)).save(preview/f"page-{number+1:02d}.png")
     manifest = {"date":"2026-10-20","source":"paper/report.zh-CN.md",

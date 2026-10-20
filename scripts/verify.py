@@ -127,13 +127,19 @@ def main():
     works = literature["works"]
     refs = [work["ref"] for work in works]
     grouped = [ref for group in literature["focusGroups"] for ref in group["refs"]]
-    require(len(works) == len(set(refs)) == 22, "22 unique workload/core and background entries")
-    require(sum(w["scope"] == "core" for w in works) == literature["coreWorks"] == 18, "18 workload/system core studies and tools")
+    require(len(works) == len(set(refs)) == 27, "27 unique workload/hardware and background entries")
+    require(sum(w["scope"] == "core" for w in works) == literature["coreWorks"] == 23, "23 workload/system/hardware core studies and tools")
     require(sum(w["scope"] == "scenario-background" for w in works) == literature["backgroundWorks"] == 4, "4 scenario-only background works")
     require(sorted(grouped) == sorted(refs), "literature focus groups cover each work once")
     require(refs.count(1) == 1 and 2 not in refs, "papers.cool discovery not double counted")
     require([group["name"] for group in literature["focusGroups"]][:2] == ["多轮负载特征与生产轨迹","轮间KV状态与缓存管理"], "workload characterization and state lead review")
-    require(set(map(int,re.findall(r"^\[(\d+)\] ",report,re.M))) == set(range(1,27)), "26 report references including documentation")
+    require(set(map(int,re.findall(r"^\[(\d+)\] ",report,re.M))) == set(range(1,32)), "31 report references including documentation")
+    require(literature["schemaVersion"] == 4, "hardware-method catalog schema")
+    chip_works = [w for w in works if w["ref"] >= 27]
+    require({w["name"] for w in chip_works} == {"PPD","AMPD","vLLM DCP","HeteroPanacea","LLMCompass"}, "five new primary hardware/PD sources")
+    require(next(g["refs"] for g in literature["focusGroups"] if g["name"] == "P/D交接与decode硬件设计方法") == [29,30,27,28,31], "hardware methods separated from scenario backgrounds")
+    for work in chip_works:
+        require(bool(work.get("evidenceType")), work["name"]+" evidence type distinguished")
     index = (ROOT/"docs/literature-index.md").read_text(encoding="utf-8")
     bib = (ROOT/"references.survey.bib").read_text(encoding="utf-8")
     for work in works:
@@ -151,7 +157,7 @@ def main():
     featured = [w for w in works if w.get("readmeFeatured")]
     featured_text = readme.split("### 直接相关的Workload研究",1)[1].split("![等待期间",1)[0]
     featured_rows = [line for line in featured_text.splitlines() if line.startswith("| [")]
-    require(len(featured) == len(featured_rows) == 12, "12 separately dated featured workload works")
+    require(len(featured) == len(featured_rows) == 16, "16 separately dated featured workload/hardware works")
     require("| 代表工作 | 日期 |" in featured_text, "featured workload table date column")
     featured_dates = [re.search(r"\d{4}-\d{2}-\d{2}",row.split("|")[2]).group(0) for row in featured_rows]
     require(featured_dates == sorted(featured_dates, reverse=True), "featured workload studies newest first")
@@ -164,6 +170,16 @@ def main():
     require(agentx["dateBasis"] == "official-announcement" and agentx["publicationDate"] == "2026-08-24", "AgentX official announcement date distinguished from paper dates")
     require("figures/09_evaluation_taxonomy.png" in readme and "| 分析事项 |" in readme, "README foregrounds workload analysis diagram and matrix")
     require("figures/11_workload_state_lifecycle.png" in readme, "README state lifecycle diagram")
+    chip_review = report.split("### 2.10.",1)[1].split("## 3.",1)[0]
+    chip_plan = report.split("### 3.6.",1)[1].split("## 4.",1)[0]
+    for term in ("PPD","AMPD","vLLM DCP","LLMCompass","HeteroPanacea","单向P→D","模拟","增量KV"):
+        require(term in chip_review, term+" chip-design evidence and boundary")
+    require("待执行" in chip_plan and "不是第5节已完成结果" in chip_plan, "chip experiments explicitly planned, not measured")
+    for ident, title in (("E1","Decode算子与数据通路归因"),("E2","KV容量、轮间驻留与恢复"),("E3","增量prefill与P/D交接"),("E4","经校准的硬件参数敏感性")):
+        require(ident+"："+title in chip_plan and ident+"：" in readme, ident+" planned experiment in report and README")
+    for term in ("真实活跃decode batch","逐token间隔ITL","SLA内输出goodput","至少3次独立运行","输出不能固定为1","去重","目标规格","预测误差"):
+        require(term in chip_plan, term+" hardware experiment protocol")
+    require("C56" in report and "不是已证明 GPU 算力、HBM 带宽或缓存容量" in report, "measured C56 is not a hardware-limit attribution")
     for axis in ("循环与阶段","上下文演化","缓存与重算","间隔与状态","整任务关键路径","控制面与工具冗余","资源与阶段耦合","并发与有效收益"):
         require(axis in readme and axis in report, axis+" workload question in README/report")
     require(readme.index("figures/09_") < readme.index("figures/01_"), "literature before experimental figure in README")
@@ -239,7 +255,7 @@ def main():
     for path in pngs:
         require(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") and path.stat().st_size > 10000, path.name+" valid nontrivial PNG")
     fingerprints = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.rglob("*")) if p.is_file() and p.name != "verification.json" and not any(part in EXCLUDED for part in p.relative_to(ROOT).parts)}
-    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":18,"scenarioBackgroundWorks":4,"figurePairs":11,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence, workload review structure and report/PDF consistency only; not an independent source audit", "filesSha256":fingerprints}
+    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":23,"scenarioBackgroundWorks":4,"plannedDecodeExperiments":4,"figurePairs":11,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence, workload/hardware review structure, planned experiment boundaries and report/PDF consistency only; not an independent source audit or execution of proposed experiments", "filesSha256":fingerprints}
     (ROOT/"verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k != "filesSha256"},ensure_ascii=False))
 

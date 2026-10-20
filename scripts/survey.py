@@ -119,17 +119,17 @@ def architectures():
 def index_and_bib(data):
     works={w["ref"]:w for w in data["works"]}
     assigned=[r for g in data["focusGroups"] for r in g["refs"]]
-    assert len(assigned)==len(set(assigned))==len(works)==22
+    assert len(assigned)==len(set(assigned))==len(works)==data["coreWorks"]+data["backgroundWorks"]
     assert set(assigned)==set(works)
-    assert sum(w["scope"]=="core" for w in works.values())==18
-    lines=["# Coding / Work场景的多轮Workload研究索引", "", "核对日期：2026-10-20。核心18项研究/工具，场景背景4项；不是Agent框架、题库或能力综述。", "", "## 选取与核验原则", "", "优先原论文与作者材料，纳入直接分析多轮轨迹、上下文/KV、工具等待、任务调度、跨层资源或观测的方法。仅凭名称包含Agent不构成纳入理由；普通聊天只作对照。不是穷尽式系统综述，不混排论文性能，不把上游收益当成本地复现。", "", "方法与测量对象来自原工作，边界是本文用于避免误读的归纳。版本化链接固定本次所引稿件；年份取首次发布。图R1～R3为负载与测量方法归纳，不复制原图。"]
+    assert sum(w["scope"]=="core" for w in works.values())==data["coreWorks"]
+    lines=["# Coding / Work场景的多轮Workload研究索引", "", f'核对日期：{data["reviewDate"]}。核心{data["coreWorks"]}项研究/工具/硬件方法，场景背景{data["backgroundWorks"]}项；不是Agent框架、题库或能力综述。', "", "## 选取与核验原则", "", "优先原论文与作者材料，纳入直接分析多轮轨迹、上下文/KV、工具等待、任务调度、跨层资源或观测的方法，并补充P/D交接与decode硬件评估。仅凭名称包含Agent不构成纳入理由；普通聊天只作对照。不是穷尽式系统综述，不混排论文性能，不把上游收益当成本地复现。", "", "方法与测量对象来自原工作，边界是本文用于避免误读的归纳。版本化链接固定本次所引稿件；年份取首次发布或所引会议版本。图R1～R3为负载与测量方法归纳，不复制原图。DCP是官方工程材料，HeteroPanacea是模拟研究，LLMCompass是通用硬件方法，不能统一称为Agent轨迹论文。"]
     for group in data["focusGroups"]:
         lines += ["", "## "+group["name"], "", "| 研究/工具 | 考察的负载与方法 | 测量什么 | 适用边界 |", "|---|---|---|---|"]
         for ref in group["refs"]:
             w=works[ref]
             version="，"+w["version"] if w.get("version") else ""
             lines.append(f'| [{w["name"]}]({w["source"]}) [{ref}]{version} | {w["method"]} | {w["measure"]} | {w["boundary"]} |')
-    lines += ["", "## 使用说明", "", "前四组为Workload/系统主线；最后一组只解释Coding与企业工作的场景来源，不展开能力评测。AgentX是回放工具，papers.cool是AgentSysBench论文的检索入口，不重复计为另一篇研究。", "", "本报告统一术语：session可含多个用户需求，每个需求含多次模型API和工具动作。不同论文的request/turn/step含义必须先对齐再比较。"]
+    lines += ["", "## 使用说明", "", "前四组为Workload/系统主线，第五组补充P/D交接与decode硬件方法；最后一组只解释Coding与企业工作的场景来源，不展开能力评测。AgentX是回放工具，papers.cool是AgentSysBench论文的检索入口，不重复计为另一篇研究。", "", "本报告统一术语：session可含多个用户需求，每个需求含多次模型API和工具动作。不同论文的request/turn/step含义必须先对齐再比较。", "", "报告第2.10节对应文献机制与设计问题，第3.6节给出E1～E4待执行方案；新文献未作为本地已复现性能或ASIC测量。"]
     (ROOT/"docs/literature-index.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
     entries=[]
     for w in sorted(works.values(),key=lambda w:w["ref"]):
@@ -146,7 +146,7 @@ def main():
         for asset in assets:
             dims={"09_evaluation_taxonomy":(1560,1100),"10_evaluation_paradigms":(1560,1020),"11_workload_state_lifecycle":(1560,1100)}[asset.stem]
             browser.screenshot(asset,asset.with_suffix(".png"),*dims)
-    print(json.dumps({"coreWorks":18,"backgroundWorks":4,"diagrams":len(assets),"formats":["svg","png"]}))
+    print(json.dumps({"coreWorks":data["coreWorks"],"backgroundWorks":data["backgroundWorks"],"diagrams":len(assets),"formats":["svg","png"]}))
 
 
 if __name__=="__main__": main()

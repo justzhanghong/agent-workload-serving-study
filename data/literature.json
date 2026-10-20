@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "reviewDate": "2026-10-20",
-  "reviewType": "Focused narrative synthesis of multi-turn workload characterization and serving research; not an agent capability survey",
-  "focus": "Coding/Work Agent multi-turn workloads: re-entry, context and KV state, tools and waiting, critical paths, resource coupling, scheduling and observability",
-  "coreWorks": 18,
+  "reviewType": "Focused narrative synthesis of multi-turn workload characterization, serving and decode-chip design methods; not an agent capability survey",
+  "focus": "Coding/Work Agent multi-turn workloads and decode-chip implications: incremental prefill, context and KV state, pauses and restoration, P/D handoff, resource attribution and calibrated hardware design-space evaluation",
+  "coreWorks": 23,
   "backgroundWorks": 4,
   "focusGroups": [
     {
@@ -42,6 +42,16 @@
         20,
         5,
         3
+      ]
+    },
+    {
+      "name": "P/D交接与decode硬件设计方法",
+      "refs": [
+        29,
+        30,
+        27,
+        28,
+        31
       ]
     },
     {
@@ -399,6 +409,100 @@
       "measure": "数字员工能否交付真实工作任务",
       "boundary": "需要跨应用终态，不能只看某次工具调用成功",
       "scope": "scenario-background"
+    },
+    {
+      "ref": 27,
+      "name": "PPD",
+      "year": 2026,
+      "authors": "Zongze Li and others",
+      "title": "Not All Prefills Are Equal: PPD Disaggregation for Multi-turn LLM Serving",
+      "source": "https://arxiv.org/abs/2603.13358v2",
+      "version": "v2",
+      "venue": "ICML 2026",
+      "proceedingsSource": "https://proceedings.mlr.press/v306/li26dq.html",
+      "scope": "core",
+      "group": "P/D交接与decode硬件设计方法",
+      "method": "测量完整/增量prefill对decode的干扰，动态选择后续轮次的P端或D端执行",
+      "measure": "后续轮次TTFT、TPOT干扰与KV传输拥塞",
+      "boundary": "其canonical基线假设单向P到D交接；不能推广为所有PD协议均重算完整历史，也不能直接推定ASIC算力配比",
+      "evidenceType": "GPU system measurements and dynamic-routing evaluation",
+      "readmeFeatured": true,
+      "publicationDate": "2026-03-09",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2603.13358"
+    },
+    {
+      "ref": 28,
+      "name": "AMPD",
+      "year": 2026,
+      "authors": "Wenhao He and others",
+      "title": "Efficient Multi-round LLM Inference over Disaggregated Serving",
+      "source": "https://arxiv.org/abs/2602.14516v2",
+      "version": "v2",
+      "venue": "ICML 2026",
+      "proceedingsSource": "https://proceedings.mlr.press/v306/he26r.html",
+      "scope": "core",
+      "group": "P/D交接与decode硬件设计方法",
+      "method": "联合离线代价建模、部署规划与在线增量prefill路由/重排",
+      "measure": "TTFT/ITL约束、历史KV访问、增量KV返回与资源配置",
+      "boundary": "远端P必要时先读取D的历史KV；仅回传增量不等于无历史传输。本地暂停decode是其实现行为，非所有硬件必然如此",
+      "evidenceType": "GPU system measurements and deployment/scheduling evaluation",
+      "readmeFeatured": true,
+      "publicationDate": "2026-02-16",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2602.14516"
+    },
+    {
+      "ref": 29,
+      "name": "vLLM DCP",
+      "year": 2026,
+      "authors": "Seonghee Lee and Sungsoo Ha and Omri Almog and Lucas Wilkinson",
+      "title": "Efficient Decode Context Parallelism with vLLM for Long Context Workloads",
+      "source": "https://vllm.ai/blog/2026-08-07-decode-context-parallelism",
+      "scope": "core",
+      "group": "P/D交接与decode硬件设计方法",
+      "method": "固定模型/硬件/负载，比较TP与按序列切分KV的decode context parallelism",
+      "measure": "长上下文KV占用、并发、吞吐—交互速度与collective通信",
+      "boundary": "官方工程测量，非同行评审论文；KV复制取决于模型和并行实现，不能直接套到V4.1或目标ASIC",
+      "evidenceType": "Official engineering measurements on a specified GPU deployment",
+      "readmeFeatured": true,
+      "publicationDate": "2026-08-07",
+      "dateBasis": "official-announcement",
+      "dateSource": "https://vllm.ai/blog/2026-08-07-decode-context-parallelism"
+    },
+    {
+      "ref": 30,
+      "name": "HeteroPanacea",
+      "year": 2026,
+      "authors": "Przemyslaw Forys and others",
+      "title": "When Does Disaggregation Pay? Simulating Prefill--Decode--Attention--FFN Specialization for Agentic LLM Inference",
+      "source": "https://arxiv.org/abs/2608.03741v1",
+      "version": "v1",
+      "scope": "core",
+      "group": "P/D交接与decode硬件设计方法",
+      "method": "以分阶段roofline/互连模型搜索P/D与Attention/FFN异构配置及精度",
+      "measure": "受功耗或成本约束的配置收益与模型架构敏感性",
+      "boundary": "自定义NPU结果是模拟；组件校验不等于端到端调度已验证。固定中心长度的合成负载不能代替真实轮间轨迹",
+      "evidenceType": "Simulation with component-level GPU validation; not measured custom silicon",
+      "readmeFeatured": true,
+      "publicationDate": "2026-08-04",
+      "dateBasis": "arxiv-v1-submission",
+      "dateSource": "https://arxiv.org/abs/2608.03741"
+    },
+    {
+      "ref": 31,
+      "name": "LLMCompass",
+      "year": 2024,
+      "authors": "Hengrui Zhang and August Ning and Rohan Baskar Prabhakar and David Wentzlaff",
+      "title": "LLMCompass: Enabling Efficient Hardware Design for Large Language Model Inference",
+      "source": "https://github.com/PrincetonUniversity/LLMCompass",
+      "venue": "ISCA 2024",
+      "scope": "core",
+      "group": "P/D交接与decode硬件设计方法",
+      "method": "联合硬件模型、算子映射/调度搜索与面积成本模型进行设计空间评估",
+      "measure": "算子/模型延迟、计算与内存配置的成本—性能取舍",
+      "boundary": "通用LLM硬件评估方法，不是Agent轨迹研究；目标MLA/稀疏/MoE算子和动态服务行为须另行扩展、校准",
+      "evidenceType": "Hardware modeling framework with measured-platform validation"
     }
   ]
 }

@@ -13,7 +13,7 @@
 | cache_baseline.json | 正常缓存历史图的数值，不具备重复分布 |
 | notification_control.json | 最新客户端通知对照的六次请求数值，不含请求正文 |
 | provenance.json | 九个输入文件的 SHA256，以及受控原始证据的内容指纹 |
-| literature.json | 18项多轮Workload/系统研究与工具、4项场景背景；不是实验结果数据 |
+| literature.json | 23项多轮Workload/系统研究、工具与硬件方法，4项场景背景；不是实验结果数据 |
 
 AgentX 中 `ttft`、`tpot` 的单位均为 ms，`isl`、`osl` 为 token，`cacheHit` 为请求级百分比，`cacheHitPercent` 为全局 token 加权百分比。吞吐由运行总量与完整回放时间计算，不是请求分位数。分位数使用线性插值，因此 token 分位数原始值可以为小数；展示表四舍五入为整数，不改变原数据。
 
