@@ -151,7 +151,7 @@ def main():
     pages = sorted(set([0,1,2,len(extracted)-1]+[
         i for i,text in enumerate(page_text)
         if any(key in re.sub(r"\s+","",text) for key in
-               ("图R1：","图R2：","图R3：","图1：","结果解读：",
+               ("图R1：","图R2：","图R3：","图1：","图E1：","结果解读：",
                 "2.10.面向decode芯片","3.6.面向decode芯片","3.6.4.E3","3.6.5.E4"))]))
     for number in pages:
         extracted[number].get_pixmap(matrix=fitz.Matrix(1.4,1.4)).save(preview/f"page-{number+1:02d}.png")

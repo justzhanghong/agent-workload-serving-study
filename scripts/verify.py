@@ -174,12 +174,47 @@ def main():
     chip_plan = report.split("### 3.6.",1)[1].split("## 4.",1)[0]
     for term in ("PPD","AMPD","vLLM DCP","LLMCompass","HeteroPanacea","单向P→D","模拟","增量KV"):
         require(term in chip_review, term+" chip-design evidence and boundary")
-    require("待执行" in chip_plan and "不是第5节已完成结果" in chip_plan, "chip experiments explicitly planned, not measured")
+    require("待执行/核验" in chip_plan and "不能整体视为已完成结果" in chip_plan, "chip experiment status distinguishes completed kernel probes from planned full-model work")
     for ident, title in (("E1","Decode算子与数据通路归因"),("E2","KV容量、轮间驻留与恢复"),("E3","增量prefill与P/D交接"),("E4","经校准的硬件参数敏感性")):
         require(ident+"："+title in chip_plan and ident+"：" in readme, ident+" planned experiment in report and README")
     for term in ("真实活跃decode batch","逐token间隔ITL","SLA内输出goodput","至少3次独立运行","输出不能固定为1","去重","目标规格","预测误差"):
         require(term in chip_plan, term+" hardware experiment protocol")
     require("C56" in report and "不是已证明 GPU 算力、HBM 带宽或缓存容量" in report, "measured C56 is not a hardware-limit attribution")
+    routing = (ROOT/'docs/pd-routing-protocol.md').read_text()
+    for term in ('P4+D4','8×B200','首轮','校准','Poisson','x=0','x=1','AMPD','Python前端'):
+        require(term in routing, 'PD routing protocol: '+term)
+    require('不能把此前四卡非PD与八卡PD' in chip_plan, 'PD comparison has equal hardware budget')
+    decode = load('decode_attention_microbench.json')
+    require(decode['schemaVersion'] == 2 and decode['platform'] == 'NVIDIA B200', 'standalone decode evidence platform/schema')
+    require(decode['vllmVersion'] == '0.29.1rc1.dev573+ge97573215', 'standalone decode runtime pinned')
+    require(decode['benchmarkScriptSha256'] == hashlib.sha256((ROOT/'scripts/decode_attention_microbench.py').read_bytes()).hexdigest(), 'standalone benchmark source fingerprint')
+    require(len(decode['runs']) == 9 and len(decode['cases']) == 108, 'nine independent kernel processes and 108 shapes')
+    require(len(decode['counterSamples']) == 24 and len(decode['counterSummaries']) == 8, '24 independent main-kernel counter samples')
+    for case in decode['cases']:
+        require(case['query_heads_per_rank'] == 16 and case['kernel_query_heads'] == 64 and case['head_padding_ratio'] == 4, 'live versus padded heads, not a speedup estimate')
+        require(case['selected_compressed_tokens'] == 512 and case['swa_tokens'] == 128 and case['cuda_graph'], 'fixed sparse selection and graph timing')
+        require(0 < case['latency_ms_min'] <= case['latency_ms_mean'] <= case['latency_ms_max'], 'finite ordered kernel latency')
+        if case['numeric_max_abs_error'] is not None:
+            require(case['batch'] == 1 and 0 <= case['numeric_max_abs_error'] <= .05, 'reference numeric validation for small shapes')
+    for entry in decode['summaries']:
+        vals = [r['latency_ms_mean'] for r in decode['cases']
+                if (r['extra_format'],r['cache_mode'],r['history_length'],r['batch']) ==
+                (entry['format'],entry['cacheMode'],entry['historyLength'],entry['batch'])]
+        require(len(vals) == entry['latencyMs']['runs'] == 3, 'three independent kernel repetitions per shape')
+        for stat, val in (('mean',statistics.fmean(vals)),('min',min(vals)),('max',max(vals))):
+            close(val,entry['latencyMs'][stat],'kernel latency aggregation '+stat)
+    for sample in decode['counterSamples']:
+        require(len(sample['metrics']) == 8 and all(math.isfinite(v) for v in sample['metrics'].values()), 'complete finite hardware counter sample')
+        require(sample['metricUnits']['dram__bytes_read.sum'] == 'byte', 'actual hardware bytes, not assumed logical footprint')
+    for summary in decode['counterSummaries']:
+        rows = [s for s in decode['counterSamples'] if (s['format'],s['batch']) == (summary['format'],summary['batch'])]
+        require(len(rows) == 3, 'three counter processes per format/batch')
+        for name, agg in summary['metrics'].items():
+            vals = [r['metrics'][name] for r in rows]
+            for stat,val in (('mean',statistics.fmean(vals)),('min',min(vals)),('max',max(vals))):
+                close(val,agg[stat],'counter aggregation '+name+' '+stat)
+    require(len(decode['evidenceSha256']) == 33 and all(re.fullmatch('[a-f0-9]{64}',v) for v in decode['evidenceSha256'].values()), '33 raw micro/counter artifact fingerprints')
+    require('### 5.9.' in report and '不是整模型利用率' in report and '尚未完成' in report, 'microbenchmark scope and incomplete full-model attribution explicit')
     for axis in ("循环与阶段","上下文演化","缓存与重算","间隔与状态","整任务关键路径","控制面与工具冗余","资源与阶段耦合","并发与有效收益"):
         require(axis in readme and axis in report, axis+" workload question in README/report")
     require(readme.index("figures/09_") < readme.index("figures/01_"), "literature before experimental figure in README")
@@ -211,7 +246,7 @@ def main():
     require(pdf_manifest["sourceSha256"] == hashlib.sha256((ROOT/pdf_manifest["source"]).read_bytes()).hexdigest(), "PDF source Markdown synchronized")
     require(pdf_manifest["pdfSha256"] == hashlib.sha256(pdf_path.read_bytes()).hexdigest(), "PDF file fingerprint")
     require(pdf_manifest["pageCount"] > 10 and pdf_manifest["outlineCount"] >= 40 and all(pdf_manifest["checks"].values()), "PDF build content/layout checks recorded")
-    require(len(pdf_manifest["embeddedFiguresSha256"]) == 11, "all 11 figures embedded in PDF")
+    require(len(pdf_manifest["embeddedFiguresSha256"]) == 12, "all 12 figures embedded in PDF")
     for name, expected in pdf_manifest["embeddedFiguresSha256"].items():
         require(expected == hashlib.sha256((ROOT/name).read_bytes()).hexdigest(), name+" PDF figure synchronized")
     require(all(f"## {i}. {name}" in report for i,name in enumerate(["引言","相关工作","方法","实验","实验结果"],1)), "required paper sections")
@@ -250,12 +285,12 @@ def main():
             require(not re.search(r'"(?:messages|content|checkpoint|workspaceId|api_base|request_id|tool_use_id)"\s*:',text), path.name+" no raw message/deployment fields")
     pngs = sorted((ROOT/"figures").glob("*.png"))
     svgs = sorted((ROOT/"figures").glob("*.svg"))
-    require(len(pngs) == len(svgs) == 11, "8 experimental and 3 survey PNG/SVG pairs")
+    require(len(pngs) == len(svgs) == 12, "9 experimental and 3 survey PNG/SVG pairs")
     require({p.stem for p in pngs} == {p.stem for p in svgs}, "matching figure pairs")
     for path in pngs:
         require(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") and path.stat().st_size > 10000, path.name+" valid nontrivial PNG")
     fingerprints = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.rglob("*")) if p.is_file() and p.name != "verification.json" and not any(part in EXCLUDED for part in p.relative_to(ROOT).parts)}
-    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":23,"scenarioBackgroundWorks":4,"plannedDecodeExperiments":4,"figurePairs":11,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence, workload/hardware review structure, planned experiment boundaries and report/PDF consistency only; not an independent source audit or execution of proposed experiments", "filesSha256":fingerprints}
+    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":23,"scenarioBackgroundWorks":4,"plannedDecodeExperiments":4,"decodeKernelProcesses":9,"decodeKernelCases":108,"decodeCounterSamples":24,"fullModelDecodeAttributionComplete":False,"figurePairs":12,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence including standalone B200 kernel probes, workload/hardware review, equal-budget routing protocol and report/PDF consistency; not an independent raw-source audit or completion of full-model E1/E2/E3/E4", "filesSha256":fingerprints}
     (ROOT/"verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k != "filesSha256"},ensure_ascii=False))
 
