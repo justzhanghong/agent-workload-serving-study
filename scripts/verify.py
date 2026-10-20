@@ -149,6 +149,8 @@ def main():
     featured_rows = [line for line in featured_text.splitlines() if line.startswith("| [")]
     require(len(featured) == len(featured_rows) == 12, "12 separately dated featured workload works")
     require("| 代表工作 | 日期 |" in featured_text, "featured workload table date column")
+    featured_dates = [re.search(r"\d{4}-\d{2}-\d{2}",row.split("|")[2]).group(0) for row in featured_rows]
+    require(featured_dates == sorted(featured_dates, reverse=True), "featured workload studies newest first")
     for work in featured:
         require(date.fromisoformat(work["publicationDate"]).isoformat() == work["publicationDate"], work["name"]+" ISO publication date")
         require(work["dateBasis"] in ("arxiv-v1-submission", "official-announcement") and work["dateSource"].startswith("https://"), work["name"]+" documented date source/basis")

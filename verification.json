@@ -1,7 +1,7 @@
 {
   "date": "2026-10-20",
   "passed": true,
-  "checks": 2468,
+  "checks": 2469,
   "replayRuns": 15,
   "realCases": 12,
   "formalRequests": 2349,
@@ -14,7 +14,7 @@
   "filesSha256": {
     ".gitattributes": "64d5b580b1b15fa88ebac5738755ed60f6bc2c33db2f748fa4c3047e9ab7fa36",
     ".gitignore": "4d652c262dbaf3d98da5a4fc80f7027571f8b93d385fc17d4f0dff5527089770",
-    "README.md": "f949ea49a3873f94dbccb5bc1ca1196c526da8ecad9657460acd6297ae8f0217",
+    "README.md": "923a5c642a67d0cdf25ef743b79771665188d08fc67c5a20eef001bbc824fd77",
     "data/README.md": "a069dc2afc6757c127960492e23ba079270012573d31dee9ffd28a71ee8e8fb4",
     "data/agentx.json": "8563fedd63a860189dfd8b86cc59fa4a8ab575b99e565cc723c17866ed6aa32c",
     "data/cache_baseline.json": "4fb840dfdf348a4d04d425d3d1ac6d553b405801e0c844a39abf6c9153403d20",
@@ -65,7 +65,7 @@
     "scripts/plot.py": "c638a363d816b1213134554c383fd1199b0df518671a3b6ca58a6fa35f492bfc",
     "scripts/report_browser.py": "fb87dbe3c82b16e960ab4c2089451b55fb4fbcf421c1832a30820f6e4086e45a",
     "scripts/survey.py": "576c173798aa3dba1a538d804a1a343e1af2a7d60641c9d68567c25d61956add",
-    "scripts/verify.py": "9850c7ddb593aa86dc66afb4346b46e0084ad6a58c229e5682dfc5b4be3d074c",
+    "scripts/verify.py": "0bd40ba9d25667b574e028cea0d01a0bd17e5cdaf00ba7e7727ca68700f89d5c",
     "tables/agentx_percentiles.md": "49cc3a6378fc4642b070f9d4ff60cee8e455eee496e2a148980da81f2e193d03",
     "tables/agentx_summary.csv": "7afed4804aeb18f8fdc802f3cc156fee8ab26dc9cea4dba34724bb5a55e78b4d",
     "tables/agentx_summary.md": "f7fbe8e87da633b0b50f2f1d463469ba94950065b98fd53cd58642a66106cf38",
