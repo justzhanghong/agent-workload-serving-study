@@ -144,6 +144,10 @@ def main():
     for name in ("TraceLab","Copilot","CacheWise","Continuum","Autellix","HEAR","AgentSysBench","InferCept","CPU","KV"):
         require(name in report.split("## 3. 方法")[0], name+" in focused related work")
     readme = (ROOT/"README.md").read_text(encoding="utf-8")
+    readme_interpretation = readme.split("### 2. 真实任务：单次推理更快，整题不一定更快",1)[1].split("### 3.",1)[0]
+    report_interpretation = report.split("### 5.2.",1)[1].split("### 5.3.",1)[0]
+    for label, section in (("README",readme_interpretation),("report",report_interpretation)):
+        require(all(term in section for term in ("结果解读：","AgentSysBench","TraceLab","CPU-Centric Perspective","计时","85%","CPU")), label+" results interpreted against related studies with accounting caveat")
     featured = [w for w in works if w.get("readmeFeatured")]
     featured_text = readme.split("### 直接相关的Workload研究",1)[1].split("![等待期间",1)[0]
     featured_rows = [line for line in featured_text.splitlines() if line.startswith("| [")]
