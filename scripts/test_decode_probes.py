@@ -30,6 +30,18 @@ class Tests(unittest.TestCase):
             self.assertEqual(client.request_json('http://127.0.0.1/reset', {}),
                              {'http_status': 200, 'empty_response': True})
 
+    def test_cache_reset_false_not_success(self):
+        with patch.object(client,'request_json',return_value={'success':False}):
+            with self.assertRaises(RuntimeError):
+                client.reset_prefix_cache('http://127.0.0.1',wait_seconds=0)
+        with patch.object(client,'request_json',return_value={'success':True}):
+            self.assertEqual(client.reset_prefix_cache('http://127.0.0.1'),{'success':True})
+
+    def test_cache_reset_unknown_schema_rejected(self):
+        with patch.object(client,'request_json',return_value={'http_status':200,'empty_response':True}):
+            with self.assertRaises(RuntimeError):
+                client.reset_prefix_cache('http://127.0.0.1')
+
     def test_stream_accounting(self):
         with patch.object(client.urllib.request, 'urlopen', return_value=Response(events())):
             row = client.stream_request('http://127.0.0.1', 'model', list(range(17)), 2, 'test', 'req')

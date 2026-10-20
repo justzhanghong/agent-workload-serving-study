@@ -29,6 +29,19 @@ def prompt(length, seed):
     return [rng.randrange(100, 100000) for _ in range(length)]
 
 
+def reset_prefix_cache(url, reset_external=False, wait_seconds=60):
+    deadline = time.monotonic()+wait_seconds
+    while True:
+        reply = request_json(url+'/reset_prefix_cache'+('?reset_external=true' if reset_external else ''),{})
+        if reply is True or isinstance(reply,dict) and reply.get('success') is True:
+            return reply
+        if not (reply is False or isinstance(reply,dict) and reply.get('success') is False):
+            raise RuntimeError('Cache reset returned an unverified success schema')
+        if time.monotonic() >= deadline:
+            raise RuntimeError('Cache reset refused while blocks remain held; do not reuse prior KV')
+        time.sleep(.5)
+
+
 def encode_body(model, tokens, output, salt, stream):
     return dict(model=model, prompt=tokens, max_tokens=output, ignore_eos=True,
                 temperature=0, seed=42, stream=stream, cache_salt=salt,
@@ -136,10 +149,8 @@ def main():
         temp.replace(args.output)
     save()
     try:
-        reset = request_json(base + '/reset_prefix_cache', {})
+        reset = reset_prefix_cache(base,reset_external=bool(config.get('offload_gib_total')))
         result['prefix_reset_response'] = reset
-        if reset is False:
-            raise RuntimeError('Prefix reset refused; do not reuse previous trial KV')
         length, batch = config['history_length'], config['batch']
         append = config.get('append_length', 128)
         seed = config.get('seed', 20261020)

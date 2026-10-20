@@ -16,6 +16,8 @@ import time
 # this is a recorded experimental setting, not a change to shared deployments.
 os.environ['VLLM_USE_RUST_FRONTEND'] = '0'
 os.environ.pop('VLLM_RUST_FRONTEND_PATH', None)
+# Enables cache-reset controls on the loopback-only experimental services.
+os.environ['VLLM_SERVER_DEV_MODE'] = '1'
 
 from vllm.v1.metrics.loggers import PrometheusStatLogger
 

@@ -123,13 +123,19 @@ def main():
                            output_budget=request['max_tokens'], prefill_stage_ms=prefill_ms,
                            prefill_usage=prefill_usage, planned_session_arrival_s=entry['arrival_seconds'],
                            actual_session_arrival_s=actual_arrival)
+                if 'expected_output_sha256' in request:
+                    row['canonical_output_matches'] = (hashlib.sha256(json.dumps(row['output_token_ids'],separators=(',',':')).encode()).hexdigest()
+                                                       == request['expected_output_sha256'])
                 with lock:
                     rows.append(row)
                     stream.write(json.dumps(row) + '\n')
                     stream.flush()
                 if row['error']:
                     break
-                previous_tokens = tokens
+                # Locally resident history includes the preceding generated
+                # response, not just that request's prompt. No future tokens
+                # are consulted when choosing a follow-up route.
+                previous_tokens = tokens+row['output_token_ids']
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(manifest['sessions']), 256)) as pool:
             list(pool.map(session, manifest['sessions']))
     planned = sum(len(s['turns']) for s in manifest['sessions'])
