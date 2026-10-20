@@ -13,7 +13,7 @@
 | cache_baseline.json | 正常缓存历史图的数值，不具备重复分布 |
 | notification_control.json | 最新客户端通知对照的六次请求数值，不含请求正文 |
 | provenance.json | 九个输入文件的 SHA256，以及受控原始证据的内容指纹 |
-| literature.json | 43 项公开文献/软件的方法、判定与适用边界；不是实验结果数据 |
+| literature.json | 18项多轮Workload/系统研究与工具、4项场景背景；不是实验结果数据 |
 
 AgentX 中 `ttft`、`tpot` 的单位均为 ms，`isl`、`osl` 为 token，`cacheHit` 为请求级百分比，`cacheHitPercent` 为全局 token 加权百分比。吞吐由运行总量与完整回放时间计算，不是请求分位数。分位数使用线性插值，因此 token 分位数原始值可以为小数；展示表四舍五入为整数，不改变原数据。
 
@@ -23,4 +23,4 @@ AgentX 中 `ttft`、`tpot` 的单位均为 ms，`isl`、`osl` 为 token，`cache
 
 `evidence.requestsSha256`、`evidence.manifestSha256` 是原始请求指标文件和清单的内容指纹，不是公开文件下载地址。原始日志由实验所有者受控保管，仓库只能复现数值分析和图表，不能从长度合成输入恢复真实代码语义，也不能独立复验未公开题目的正确性。
 
-文献目录以 Coding / Work Agent 为主线，`focusGroups` 决定展示分组，`group` 保留各项原主题标签。它生成文献索引和新增书目；不修改九项原实验输入及其证据指纹。检索日、版本及方法局限随目录保存，不能把文献中的方法或成绩当成本地复现实测。
+文献目录研究Coding / Work场景下的多轮负载，不是Agent能力或题库综述。`scope`区分核心研究与场景背景，`focusGroups`按轨迹、KV状态、调度接口和跨层资源分组。目录生成索引及书目，不修改九项原实验输入或证据指纹。检索日、原稿版本及方法边界随目录保存，不能把文献中的优化收益当成本地复现实测。

@@ -38,30 +38,32 @@ class Diagram:
 
 
 def taxonomy():
-    d=Diagram(1560,1040,"Coding / Work Agent：评测对象与方法体系","任务主线优先；服务、观测与可信验收横向支撑。非论文原图，非新增实验。")
+    d=Diagram(1560,1100,"Coding / Work Agent：多轮 Workload 分析框架","关注负载如何产生服务压力，而非 Agent 能力或题库分类。方法归纳，非新增实测。")
     cards=[
-        ("Coding 与终端工程",["仓库修复 / 多文件修改 / 运行环境", "SWE-bench / Pro / Live", "Terminal-Bench / SWE-agent / OpenHands"],RED),
-        ("Work 与企业工作流",["企业应用 / 浏览器 / 桌面 / 文件", "WorkArena / TheAgentCompany / CRM", "OSWorld / SpreadsheetBench / 浏览检索"],CORAL),
-        ("科研与 ML 工程",["编写程序 / 训练 / 实验 / 复现", "MLE-bench / ScienceAgentBench", "PaperBench：分层检查复现产物"],ROSE),
-        ("服务与可观测性",["固定轨迹 / 推理服务 / 全栈测量", "AgentX / AgentSysBench / AgentSight", "状态管理 / 依赖 / CPU、GPU、I/O"],LILAC),
-        ("评测方法与可靠性",["过程进展 / 重复运行 / 独立验收", "规则、安全、基础设施与失败分类", "多角色依赖和任务关键路径"],ROSE),
-        ("普通对话与组件：简要背景",["聊天记忆、函数调用等只作补充", "不能代替代码、工件与业务终态验收", "本综述不展开普通聊天能力排名"],"#a3a8b1"),
+        ("1  循环与模型重入",["用户需求 / 模型 step / 工具动作","自主轮数 / 重试 / 分支 / 阶段","同一并发 ≠ 同一请求到达"],RED),
+        ("2  上下文演化",["历史 / 新工具结果 / 输出","增长、压缩与前缀改变","长 ISL ≠ 大量实际 prefill"],CORAL),
+        ("3  缓存与重复计算",["命中量 / 待 prefill / 真正新增","轮内与跨轮、暂停与模型切换","不匹配、过期和驱逐要区分"],ROSE),
+        ("4  间隔与状态寿命",["工具等待 / 用户批准 / 长暂停","KV、文件、进程与业务状态","驻留 GB·s / 恢复首轮延迟"],LILAC),
+        ("5  整任务关键路径",["API / 工具 / 编排 / 队列","并行与后台执行不能简单累加","请求更快不保证整题更快"],RED),
+        ("6  控制面与工具冗余",["工具定义、观察、摘要和重试","辅助调用 / token / 数据移动","安全复用先看权限与新鲜度"],CORAL),
+        ("7  跨层资源耦合",["GPU / CPU / DRAM / I/O / 网络","阶段变化、突发和共享干扰","利用率相关性不代替干预"],ROSE),
+        ("8  并发与有效收益",["活跃请求 ≠ 等待 session","到达、SLA、质量与公平性","完成时间 / goodput / 资源"],LILAC),
     ]
     for i,(title,lines,color) in enumerate(cards):
-        x=40+(i%3)*510;y=150+(i//3)*315
-        d.box(x,y,480,265,[],color,"#fcf9fa")
-        d.text(x+240,y+45,[title],25,color)
-        d.text(x+240,y+105,lines,20)
-    d.arrow([(780,750),(780,790)])
-    d.box(40,805,1480,150,[],RED,"#f7f3f6")
-    d.text(780,843,["统一比较维度"],24,RED)
-    d.text(780,889,["评测目标  /  任务与模态  /  执行驱动  /  状态范围  /  到达与资源  /  判定与重复"],22)
-    d.text(780,990,["读图结论：工作是否做对、服务是否够快、系统为何变慢，是互补问题，不能合成一个未经定义的排名。"],20,"#646b78")
+        x=25+(i%4)*385;y=160+(i//4)*330
+        d.box(x,y,360,280,[],color,"#fcf9fa")
+        d.text(x+180,y+48,[title],23,color)
+        d.text(x+180,y+115,lines,18)
+    d.arrow([(780,785),(780,827)])
+    d.box(40,840,1480,155,[],RED,"#f7f3f6")
+    d.text(780,883,["质量 / SLA 约束下的整任务时间、有效吞吐与资源占用"],25,RED)
+    d.text(780,937,["请求指标 → 跨轮状态 → 关键路径 → 受控策略验证"],23)
+    d.text(780,1048,["多轮 Workload 不只是把聊天轮数加长；依赖、间隔、状态和控制面都会改变服务压力。"],21,"#646b78")
     return d.save("09_evaluation_taxonomy")
 
 
 def paradigms():
-    d=Diagram(1560,1020,"三种互补实验范式：同一工作，三个观察切面","抽象自 AgentX、Coding / Work 任务基准及 AgentSysBench / AgentSight；虚线为可选或范围外。")
+    d=Diagram(1560,1020,"多轮 Workload：三种互补测量方法","依据 AgentX、TraceLab、AgentSysBench 与 AgentSight 归纳；任务闭环测执行路径，不是能力榜。")
     for x,title,color in [(25,"A  固定轨迹回放",RED),(540,"B  任务自主闭环",CORAL),(1055,"C  全栈关联与生产补充",ROSE)]:
         d.box(x,135,480,800,[],color,"#fffdfd")
         d.text(x+240,181,[title],25,color)
@@ -70,7 +72,7 @@ def paradigms():
             y=235+i*135
             d.box(x,y,400,85,lines,RED if x==65 else ROSE,size=22)
             if i<3:d.arrow([(x+200,y+88),(x+200,y+129)])
-    d.box(65,815,400,83,["不验证新模型是否解对任务"],"#999fa9","#fafafa",20,True)
+    d.box(65,815,400,83,["长度回放不重建工具决策"],"#999fa9","#fafafa",20,True)
     bx=590
     for y,lines in [(235,["任务与可恢复的初始环境"]),(360,["Agent + 模型 + 执行接口"]),(485,["代码 / 浏览器 / 业务工具"]),(610,["观察、日志与环境状态"])]:
         d.box(bx,y,380,80,lines,CORAL,size=21)
@@ -79,60 +81,60 @@ def paradigms():
     d.text(570,535,["循环"],17,"#777",anchor="end")
     d.arrow([(780,695),(780,741)])
     d.box(590,748,380,85,["结束 / 停止 → 独立验收"],CORAL,size=21)
-    d.text(780,885,["路径可变：比较真实工作结果"],20,"#646b78")
+    d.text(780,885,["路径可变：测时间、状态与开销"],20,"#646b78")
     d.box(1095,815,400,83,["观测相关性 ≠ 优化因果证据"],"#999fa9","#fafafa",20,True)
     d.text(780,983,["先用回放隔离引擎因素，再用任务闭环看端到端收益；生产等待与长期状态需单独补充。"],21,RED)
     return d.save("10_evaluation_paradigms")
 
 
 def architectures():
-    d=Diagram(1560,1070,"Coding / Work Agent：执行器与评测边界","方法示意，依据 SWE-agent [32]、Agentless [35]、OpenHands / Versa [36,47] 重绘；不是原项目完整架构。")
-    for x,title,color in [(25,"SWE-agent：ACI 交互闭环",RED),(540,"Agentless：固定阶段",CORAL),(1055,"OpenHands / Versa：通用工具",ROSE)]:
-        d.box(x,135,480,735,[],color,"#fffdfd")
-        d.text(x+240,181,[title],23,color)
-    d.box(70,235,390,85,["模型根据观察选择下一步"],RED)
-    d.arrow([(265,323),(265,365)])
-    d.box(70,372,390,85,["Agent-Computer Interface"],RED)
-    d.arrow([(265,460),(265,500)])
-    d.box(70,508,390,110,["仓库搜索 / 阅读 / 编辑", "命令执行 / 测试"],RED)
-    d.arrow([(265,621),(265,663)])
-    d.box(70,671,390,85,["工具结果与新观察"],RED)
-    d.arrow([(70,713),(47,713),(47,278),(67,278)])
-    for i,lines in enumerate([["定位相关文件与代码"],["生成修复候选"],["验证与筛选补丁"]]):
-        y=260+i*170
-        d.box(585,y,390,100,lines,CORAL)
-        if i<2:d.arrow([(780,y+103),(780,y+160)])
-    d.text(780,804,["阶段固定，可比较多候选与验证预算"],20,"#646b78")
-    d.box(1100,235,390,100,["模型与事件 / 执行编排"],ROSE)
-    d.arrow([(1295,338),(1295,383)])
-    for y,lines in [(390,["代码编辑 / 执行 / 终端"]),(510,["搜索 / 视觉网页浏览"]),(630,["文件访问 / 沙盒 / 工件"])]:
-        d.box(1100,y,390,85,lines,ROSE,size=22)
-    d.arrow([(1493,673),(1515,673),(1515,285),(1493,285)])
-    d.text(1295,804,["同一工具平台连接 Coding 与 Work"],20,"#646b78")
-    d.arrow([(265,873),(265,911)],True)
-    d.arrow([(780,873),(780,911)],True)
-    d.arrow([(1295,873),(1295,911)],True)
-    d.box(40,920,1480,100,["评测边界：固定题目、初态与预算 → 保存候选 / 轨迹 → 测试、工件或业务终态验收", "分开执行器效果、模型效果与环境故障；自报完成不是独立验收。"],RED,"#f7f3f6",21,True)
-    return d.save("11_coding_work_architectures")
+    d=Diagram(1560,1100,"多轮 Workload：等待期间的状态与跨层信息","依据 AgentSysBench、InferCept、Continuum、CacheWise 与 HEAR 归纳；不是已部署的本地优化。")
+    labels=[(40,["运行","模型 / 工具 / 编排"],RED),(430,["等待","工具 / 用户 / 外部事件"],CORAL),(820,["恢复","下一轮模型进入"],ROSE),(1210,["结束 / 交接","释放或持久化"],LILAC)]
+    for x,lines,color in labels:
+        d.box(x,205,310,105,lines,color,size=23)
+    for a,b in [(353,427),(743,817),(1133,1207)]: d.arrow([(a,257),(b,257)])
+    d.arrow([(975,202),(975,146),(195,146),(195,202)])
+    d.text(590,134,["未完成：继续下一轮"],19,"#646b78")
+    d.text(780,365,["等待不是结束：分开管理三类状态 / 资源"],26,RED)
+    blocks=[
+        (40,"性能状态（可重算）",["KV：HBM 驻留 / DRAM 卸载 / 驱逐","比较复用、重算、传输与排队代价","观察恢复首轮和内存时间积分"],RED),
+        (550,"正确性状态（保持语义）",["文件 / 进程状态 / 数据库 / 业务副作用","暂停或迁移仍需一致、可恢复","不能当作普通 KV 随意丢弃"],CORAL),
+        (1060,"活动工作集（临时资源）",["编译、测试的 CPU / DRAM 峰值","运行峰值 ≠ 全部检查点大小","暂停边界与实际驻留需测量"],ROSE),
+    ]
+    for x,title,lines,color in blocks:
+        d.box(x,405,460,225,[],color,"#fcf9fa")
+        d.text(x+230,452,[title],23,color)
+        d.text(x+230,503,lines,19)
+    d.box(40,705,700,145,["Harness 知道：步骤依赖、工具事件、恢复意图","记录上下文变化、用户间隔和任务完成目标"],RED,"#fff7f8",21)
+    d.box(820,705,700,145,["Engine 知道：队列、KV、prefill / decode","记录驱逐、换入、内存压力与执行能力"],ROSE,"#fff7f8",21)
+    d.arrow([(744,761),(816,761)])
+    d.arrow([(816,793),(744,793)])
+    d.text(780,680,["跨层关联"],18,"#646b78")
+    d.arrow([(390,853),(390,886),(780,886),(780,909)])
+    d.arrow([(1170,853),(1170,886),(780,886)])
+    d.box(40,922,1480,110,["用 session / step / parent span 与对齐时钟关联，而不是只叠 GPU 利用率曲线","测量占用、等待、恢复与关键路径；改变策略后，再验证质量和端到端收益"],RED,"#f7f3f6",22)
+    return d.save("11_workload_state_lifecycle")
 
 
 def index_and_bib(data):
     works={w["ref"]:w for w in data["works"]}
     assigned=[r for g in data["focusGroups"] for r in g["refs"]]
-    assert len(assigned)==len(set(assigned))==len(works)==43
+    assert len(assigned)==len(set(assigned))==len(works)==22
     assert set(assigned)==set(works)
-    lines=["# Coding / Work Agent文献方法索引", "", "核对日期：2026-10-20。正文重点是执行真实工作、可验证产物和服务系统；普通聊天/记忆仅作背景。", "", "## 选取与核验原则", "", "优先原论文、会议页面及作者项目；选择任务基准、执行框架、验收有效性和服务观测中方法不同的代表。不是穷尽性系统综述，不合并不同任务、版本、执行器、预算或验收方式的模型成绩，也不声称已复现这些基准。", "", "表中方法概述来自原工作，边界是本文用于避免误读的归纳。图R1～R3是方法重绘，不复制论文原图；已有实验与调研分开。"]
+    assert sum(w["scope"]=="core" for w in works.values())==18
+    lines=["# Coding / Work场景的多轮Workload研究索引", "", "核对日期：2026-10-20。核心18项研究/工具，场景背景4项；不是Agent框架、题库或能力综述。", "", "## 选取与核验原则", "", "优先原论文与作者材料，纳入直接分析多轮轨迹、上下文/KV、工具等待、任务调度、跨层资源或观测的方法。仅凭名称包含Agent不构成纳入理由；普通聊天只作对照。不是穷尽式系统综述，不混排论文性能，不把上游收益当成本地复现。", "", "方法与测量对象来自原工作，边界是本文用于避免误读的归纳。版本化链接固定本次所引稿件；年份取首次发布。图R1～R3为负载与测量方法归纳，不复制原图。"]
     for group in data["focusGroups"]:
-        lines += ["", "## "+group["name"], "", "| 工作 | 执行/构造方法 | 检查什么 | 使用边界 |", "|---|---|---|---|"]
+        lines += ["", "## "+group["name"], "", "| 研究/工具 | 考察的负载与方法 | 测量什么 | 适用边界 |", "|---|---|---|---|"]
         for ref in group["refs"]:
             w=works[ref]
-            lines.append(f'| [{w["name"]}]({w["source"]}) [{ref}] | {w["method"]} | {w["measure"]} | {w["boundary"]} |')
-    lines += ["", "## 补充来源", "", "BFCL的多轮与多步方法以[作者V3说明](https://gorilla.cs.berkeley.edu/blogs/13_bfcl_v3_multi_turn.html)补充会议论文；不把当前总榜构成套用到旧版。AgentX是上游回放工具，papers.cool是检索入口，都不伪称为独立基准论文。"]
+            version="，"+w["version"] if w.get("version") else ""
+            lines.append(f'| [{w["name"]}]({w["source"]}) [{ref}]{version} | {w["method"]} | {w["measure"]} | {w["boundary"]} |')
+    lines += ["", "## 使用说明", "", "前四组为Workload/系统主线；最后一组只解释Coding与企业工作的场景来源，不展开能力评测。AgentX是回放工具，papers.cool是AgentSysBench论文的检索入口，不重复计为另一篇研究。", "", "本报告统一术语：session可含多个用户需求，每个需求含多次模型API和工具动作。不同论文的request/turn/step含义必须先对齐再比较。"]
     (ROOT/"docs/literature-index.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
     entries=[]
     for w in sorted(works.values(),key=lambda w:w["ref"]):
         if w["ref"]<8: continue
-        entries.append(f'@misc{{surveyRef{w["ref"]},\n  title={{{w["title"]}}},\n  author={{{w["authors"]}}},\n  year={{{w["year"]}}},\n  url={{{w["source"]}}},\n  note={{Primary source checked 2026-10-20; methods review, not a reproduced score}}\n}}')
+        entries.append(f'@misc{{surveyRef{w["ref"]},\n  title={{{w["title"]}}},\n  author={{{w["authors"]}}},\n  year={{{w["year"]}}},\n  url={{{w["source"]}}},\n  note={{Primary source checked 2026-10-20; workload/serving methods review, not reproduced performance}}\n}}')
     (ROOT/"references.survey.bib").write_text("\n\n".join(entries)+"\n",encoding="utf-8")
 
 
@@ -142,9 +144,9 @@ def main():
     assets=[taxonomy(),paradigms(),architectures()]
     with ReportBrowser() as browser:
         for asset in assets:
-            dims={"09_evaluation_taxonomy":(1560,1040),"10_evaluation_paradigms":(1560,1020),"11_coding_work_architectures":(1560,1070)}[asset.stem]
+            dims={"09_evaluation_taxonomy":(1560,1100),"10_evaluation_paradigms":(1560,1020),"11_workload_state_lifecycle":(1560,1100)}[asset.stem]
             browser.screenshot(asset,asset.with_suffix(".png"),*dims)
-    print(json.dumps({"reviewWorks":len(data["works"]),"diagrams":len(assets),"formats":["svg","png"]}))
+    print(json.dumps({"coreWorks":18,"backgroundWorks":4,"diagrams":len(assets),"formats":["svg","png"]}))
 
 
 if __name__=="__main__": main()

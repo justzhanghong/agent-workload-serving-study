@@ -44,9 +44,9 @@ PDF的唯一正文来源为`paper/report.zh-CN.md`，使用同名SVG嵌入报告
 | 06_cache_condition | 历史缓存条件与三轮范围 | 范围不是置信区间；内部输出不一致 |
 | 07_resource_timelines | GPU/KV时序 | GPU每分钟样本均值、KV每分钟峰值，无缺失插值 |
 | 08_latest_client_control | 新版客户端实际请求对照 | 独立服务链路的行为检查，不是性能基准 |
-| 09_evaluation_taxonomy | Coding / Work任务主线与六维方法分类 | 文献抽象重绘，不是实验图或官方共同标准 |
+| 09_evaluation_taxonomy | Coding / Work多轮负载的八项分析轴 | 文献方法归纳，不是Agent能力分类或新增实验 |
 | 10_evaluation_paradigms | 固定回放、自主执行、全栈关联 | 决策闭环与负载闭环不是同一变量 |
-| 11_coding_work_architectures | SWE-agent、Agentless、OpenHands / Versa架构示意 | 方法抽象，不声称是原项目完整实现 |
+| 11_workload_state_lifecycle | 运行/等待/恢复、三类状态与harness/engine信息 | 分析示意，不声称已在本地接入卸载或协同策略 |
 
 ## 所有者从原材料重新导出
 

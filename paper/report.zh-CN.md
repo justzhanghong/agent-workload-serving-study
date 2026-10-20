@@ -2,13 +2,13 @@
 
 技术报告 · 2026-10-20 · 基于已完成实验的离线整理
 
-修订重点：Coding / Work Agent评测方法体系。另存[同源PDF版本](report.zh-CN.pdf)。
+修订重点：Coding / Work场景下的多轮Workload特征、服务系统与分析方法。另存[同源PDF版本](report.zh-CN.pdf)。
 
 研究对象：DeepSeek-V4.1-Flash、DeepSeek-V4-Flash-0731、Qwen3.8-27B。下文分别简称 V4.1、V4、Qwen；简称不代表额外的模型版本。本报告不是已发表或经同行评审的论文。
 
 ## 摘要
 
-单轮推理性能不足以描述多轮 Agent 服务：历史输入重复发送、工具执行和上下文管理都会影响吞吐、延迟与任务完成时间。本文先梳理Coding / Work Agent的任务基准、执行架构与验收方法，再结合 AgentX 固定轨迹回放、四道真实代码任务，以及 CUDA Graph 和动态通知的专项分析，研究三个模型部署的实际表现。AgentX 使用同一批 256 个会话、2048 条候选请求，在 B200×4、TP4、正常前缀缓存条件下测量 C16/32/48/56/64；真实任务采用四个独立 Claude Code 客户端，共保留 12 组正式执行、2349 次模型请求。结果表明：在 P90 TTFT≤10 s 且 P90 TPOT≤50 ms 的约束下，V4.1 的最高已测可行并发为 56，V4 和 Qwen 为 48；真实任务中不与模型 API 重叠的工具区间占总耗时的 82.80%～96.79%，推理服务排序不能直接转化为整题耗时排序；当前 Anthropic 兼容层对动态 system 消息的前置合并破坏了长前缀稳定性，已定位三个正式服务中的 46 处相关缓存深跌。本文同时公开脱敏数值、图表生成脚本及证据指纹，并保留样本跳过、异构软件栈、单轮测量和验收范围等限制。
+单轮推理性能不足以描述多轮 Agent 服务：历史输入重复发送、工具执行和上下文管理都会影响吞吐、延迟与任务完成时间。本文先调研Coding / Work场景下多轮Workload的上下文增长、轮间等待、状态驻留与关键路径，再结合 AgentX 固定轨迹回放、四道真实代码任务，以及 CUDA Graph 和动态通知的专项分析，研究三个模型部署的实际表现。AgentX 使用同一批 256 个会话、2048 条候选请求，在 B200×4、TP4、正常前缀缓存条件下测量 C16/32/48/56/64；真实任务采用四个独立 Claude Code 客户端，共保留 12 组正式执行、2349 次模型请求。结果表明：在 P90 TTFT≤10 s 且 P90 TPOT≤50 ms 的约束下，V4.1 的最高已测可行并发为 56，V4 和 Qwen 为 48；真实任务中不与模型 API 重叠的工具区间占总耗时的 82.80%～96.79%，推理服务排序不能直接转化为整题耗时排序；当前 Anthropic 兼容层对动态 system 消息的前置合并破坏了长前缀稳定性，已定位三个正式服务中的 46 处相关缓存深跌。本文同时公开脱敏数值、图表生成脚本及证据指纹，并保留样本跳过、异构软件栈、单轮测量和验收范围等限制。
 
 关键词：Agent workload；多轮推理；前缀缓存；TTFT；TPOT；端到端性能；vLLM
 
@@ -28,158 +28,119 @@
 
 ## 2. 相关工作
 
-### 2.1. 范围与术语：多轮不是单一排行榜
+### 2.1. 调研对象：Coding / Work场景的多轮Workload，而非Agent能力
 
-本节重点研究能修改代码、执行程序、操作应用并交付可验证产物的Coding Agent与Work Agent，而非普通聊天机器人。按方法组织43项代表性工作，以代码/终端工程、企业工作流、科研/ML工程为主线，服务观测与可靠性为横向支撑。检索核对截至2026-10-20，依据原论文、会议页面及作者项目；不宣称穷尽文献，也没有复现所有基准或混排模型分数。[文献方法索引](../docs/literature-index.md)记录来源与边界。
+本节研究Coding / Work Agent反复调用模型、执行工具、等待和恢复所形成的系统负载：每轮产生多少新计算，什么状态跨轮存活，时间花在哪里，并发如何影响延迟，以及哪些优化能缩短整任务。它不是Coding Agent框架、题库或解决率综述。普通多轮聊天只用于对照，不单列能力榜。
 
-一条工作需求可以引发多次模型—工具—观察循环，例如ReAct[30]，不要求用户反复发言。用户补充需求的多轮交互、跨会话记忆和多角色协同则是不同变量；多个互不通信的客户端并行也不等于协作。应分别报告用户轮次、模型调用、工具动作与持续时间。
+核心选取18项工作负载研究、服务系统及测量工具，另用4项基准说明场景，核对截至2026-10-20。SWE-bench、Terminal-Bench是代码/终端任务来源，WorkArena、TheAgentCompany提供办公/企业任务背景[23～26]；此处不展开它们的能力成绩。文献原始来源、研究对象及限制见[Workload研究索引](../docs/literature-index.md)。
 
-### 2.2. 统一分类：目标、任务、驱动、状态、负载与判定
+计量先统一层级：长寿命session可以含多次用户需求，每次需求又触发多个模型调用及工具动作。TraceLab把用户需求称为request、模型进入称为step[8]；本报告后文“请求”通常指一次模型API调用，不能直接混算两者的每请求成本。四个独立客户端并行也不等于有依赖的多Agent执行图。
 
-![Agent多轮评测体系](../figures/09_evaluation_taxonomy.png)
+### 2.2. 负载结构：模型反复进入、状态持续增长、执行跨越CPU/GPU
 
-图R1：Coding / Work任务主线及六维比较框架。它是本文的组织方式，不是论文共同采用的官方标准；图R1～R3为方法重绘，不是新的实测结果。
+![多轮Agent Workload分析框架](../figures/09_evaluation_taxonomy.png)
 
-| 维度 | 需要说明的选择 | 未说明时容易产生的误判 |
+图R1：Coding / Work多轮负载的“特征—系统压力—分析量”框架，为本文依据文献归纳的研究问题，不是能力分类或新的测量结果。
+
+不同于把ISL/OSL独立采样的一次推理，下一轮往往依赖上一轮工具结果。轮数、上下文、输出和工具间隔彼此相关：模型越快，后续请求可能越早到达；工具返回越大，下一轮输入也可能越长；压缩、分支或通知又改变可复用前缀。因此，仅保留请求长度直方图会丢失负载的时间结构与共享关系。
+
+应同时观察三条轨迹：执行轨迹记录谁依赖谁、何时具备运行条件；上下文轨迹记录历史、工具输出与压缩如何变化；状态轨迹记录KV、沙盒文件/进程和检索状态在运行、等待、恢复之间怎样占用资源。这三条轨迹共同决定服务压力，而非由Agent名称决定。
+
+### 2.3. 直接相关的多轮负载刻画研究
+
+| 研究 | 数据与测量切面 | 主要分析对象 | 对本研究的启示 |
+|---|---|---|---|
+| TraceLab[8] | 真实Claude Code/Codex日志，归一session/用户需求/step | 自主循环、上下文、工具长尾、跨用户间隙缓存 | 区分缓存读取、实际prefill与全新信息，保留真实等待 |
+| Copilot生产轨迹[9] | 大规模真实使用，分开用户轮次与轮内循环 | 轮内/跨轮复用、用户空闲、模型切换及压缩 | 全局命中率会掩盖边界行为，需条件分组 |
+| Agentic AI Workload Characteristics[10] | Agent与服务端联动跟踪，多模型/推理模式 | 反复模型进入、缓存后计算、工具行为阶段 | 长ISL不自动意味着prefill主导，要测实际未缓存工作 |
+| AgentSysBench[1] | 受控多组件部署并补充生产轨迹 | 非模型耗时、异构资源、长期状态、控制面和工具冗余 | 联合分析模型、工具、环境与暂停状态 |
+| CPU-Centric Perspective[15] | 跨硬件、不同任务与混合负载 | CPU编排/工具瓶颈、CPU/GPU重叠、队首阻塞 | GPU不忙时要定位宿主侧关键路径，而非只加推理卡 |
+| Architectural Implications[16] | Azure生产观察与受控框架实验 | 碎片化、突发、角色差异、共享核局部性 | 同一框架也可能随任务/工具改变硬件压力 |
+
+这些研究不是在回答“哪个Agent更会做题”，而是在解释轨迹怎样转化为服务成本。生产日志更能观察用户节奏和长暂停，但存在路由、模型及人群混杂；受控运行更便于改变资源和策略，但不能自动代表生产到达。各文献统计口径与部署不同，不直接相减其命中率或吞吐数值。
+
+### 2.4. 上下文与缓存：长输入、实际prefill、全新信息不是同一个量
+
+TraceLab[8]将输入分为已缓存prefix与待prefill的append；后者还可能含被驱逐或前缀改变后重新计算的旧历史。Copilot轨迹[9]进一步区分轮内与用户轮次边界；工作负载研究[10]显示，在其有效缓存条件下，长历史复用会改变prefill/decode占比。应从“总输入很长”推进到“这一次到底重新算了多少”。
+
+一个仅用于说明口径的例子：历史200K、新工具结果1K，完整输入201K，若命中190K，则实际待prefill为11K，其中1K为本轮新增、10K为未复用旧历史。不能把11K都叫新信息，也不能用201K宣称实际完成了201K的prefill计算。若构建冗余prefill放大率，应以一致口径的实际prefill量除以真正新增量，并处理首轮、压缩和重写；仅靠usage未必能重建后者。
+
+需要按触发事件分别画输入、缓存token、未缓存token、输出及首token延迟：普通工具返回、用户继续输入、上下文压缩、模型/模板变化、system通知、分支切换和长暂停。prefix hash或实际token前缀比对可区分“内容不再匹配”与“内容相同但缓存不在”；客户端usage、服务端查询counter和实际重算也要对账。
+
+PagedAttention[5]、SGLang[20]提供块管理与前缀复用基础，但高命中率不意味着旧历史没有读取/attention成本，也不证明工具工作流高效。普通聊天记忆正确性与KV缓存复用不同，本节不展开聊天记忆基准。
+
+### 2.5. 工具间隔与状态生命周期：等待不是结束，也不是免费
+
+![多轮负载的状态生命周期与跨层信息](../figures/11_workload_state_lifecycle.png)
+
+图R2：等待期间的状态管理与采集示意，依据AgentSysBench、InferCept、Continuum、CacheWise及HEAR[1,22,12,11,14]归纳。图示是分析边界，不表示本地已实施卸载或协议改造。
+
+KV属于可重算的性能状态；源码修改、文件、数据库和外部副作用属于需要维持语义的状态；编译期间的工作集峰值又不等于暂停时必须保留的全部状态[1]。只看GPU KV会遗漏沙盒和检索状态，只看内存峰值也会高估检查点大小。
+
+工具等待、后台执行、人类阅读/批准和网络等待应分开记录，并统计持续时间、恢复概率与再次进入模型的时间，而不只统计平均tool latency。相同“Bash”既可能是毫秒查询，也可能是长编译；按工具名平均不足以预测回归时刻。状态应按时间积分为GB·s/GB·min，并记录共享块去重后的实际占用，不能直接将每轮完整ISL相加估算HBM。
+
+| 系统研究 | 利用的负载信息 | 处理的取舍 | 应验证的结果 |
+|---|---|---|---|
+| InferCept[22] | 外部交互造成的暂停 | 保留、换出或重算上下文 | 占用、传输、恢复首轮延迟 |
+| Continuum[12] | 恢复成本、排队与不稳定工具间隔 | 选择性KV驻留TTL，加程序级调度 | 整job耗时及预测失准时表现 |
+| CacheWise[11] | 大前缀重用与工具元数据 | 前缀感知调度、复用感知驱逐 | 驱逐/重算量与session完成时间 |
+| TokenCake[18] | 有依赖的多Agent图与运行状态 | 等待时卸载，关键路径状态优先 | 工作流延迟、换入代价和内存竞争 |
+
+不能预设等待时全部留在HBM最好，也不能预设全部驱逐最好：要比较省下的重算与增加的排队、挤占、传输成本。TokenCake等多Agent图研究可补充依赖管理，但不能把四个独立客户端当作已验证该拓扑。
+
+### 2.6. 关键路径、控制面与异构资源：请求最优不等于任务最优
+
+Parrot[21]通过数据流依赖连接应用与服务；Autellix[13]把程序级服务信息带入调度，关注累积等待而非只优化单次API；Cortex[17]研究按阶段隔离资源池，减少计算与内存干扰。这些方法共同指出：调度单位、状态单位与用户完成目标需要对齐，但它们并非同一种算法或相同适用场景。
+
+HEAR[14]区分harness知道的依赖/状态生命周期/目标，与engine知道的队列/KV压力/执行能力，并定义双向信息交换。它与工作负载分析直接相关：只采客户端看不见引擎排队，只采GPU又不知道工具何时返回。AgentSight[19]提供通信语义与系统事件的关联思路；观测能力不等于因果证明，也不替代任务验收。
+
+时间应拆到编排与序列化、服务排队、prefill、decode、工具执行/等待、检索及数据移动，再通过依赖图还原关键路径。并行工具或后台命令可能与API重叠，不能简单把全部span相加。CPU、内存带宽、磁盘、网络与GPU的压力会随读文件、编译、测试、浏览等阶段变化[15,16]；其他用户使用不同GPU仍可能共享这些资源。
+
+AgentSysBench[1]还提出控制面成本：工具定义和历史占用上下文、压缩/摘要等辅助模型调用，以及暂停引起的重复prefill。应记录它们的次数、token、耗时和质量影响；工具冗余则要在输入、权限、文件/网页新鲜度和副作用允许时才判断可缓存。减少累计工具秒数或token不一定减少同等关键路径时间。
+
+### 2.7. 测量协议：回放、真实闭环与生产观察互补
+
+![多轮Workload的三种测量方法](../figures/10_evaluation_paradigms.png)
+
+图R3：固定轨迹、真实任务闭环与生产/全栈观察的互补关系。方法图为本文归纳，不把文献系统组合成已部署的新系统。
+
+| 方法 | 保留什么 | 适合回答 | 易遗漏什么 |
+|---|---|---|---|
+| 固定轨迹回放[3] | 请求顺序、长度、共享结构、输出预算；可另保留时间间隔 | 相同工作量下的引擎并发、缓存和SLA | 自主决策、工具语义、真实等待及正确性 |
+| 真实任务闭环 | 工具执行、上下文变化、模型决定的下一步 | 整题时间、路径/返工、完成状态和实际开销 | 模型一换，实际工作量也变，难单独归因引擎 |
+| 生产/全栈观察[1,8,9,19] | 用户节奏、长暂停、跨层资源与恢复 | 状态寿命、突发、共享资源和真实复用 | 混杂多，仅凭相关性难证明策略收益 |
+
+还要独立说明到达协议：固定C个会话、每会话等响应和工具后再发下一步，是闭环负载；外部会话按时间戳/速率进入，是到达过程的另一维。Agent自主决策闭环与闭环负载不是同一个概念。省略工具或用户等待的“立即继续”回放适合受控压力测试，却改变KV回用距离和活跃请求数，不能称为完整生产轨迹。
+
+容量遍历应固定有效数据、输出、服务资源及缓存初态，区分活跃推理请求、正在工具执行和等待恢复的session。增加并发是否值得，要同时看TTFT/TPOT尾部、有效完成吞吐、排队与公平性；逻辑Total TPGS包含缓存输入，应另报输出吞吐和实际prefill工作，避免把重复历史当新增计算收益。
+
+### 2.8. 这种多轮场景具体应该分析什么
+
+下表是从文献综合出的分析问题与建议输出，不是已完成的新实验或统一官方标准。
+
+| 分析事项 | 要回答的问题 | 核心观测与建议图表 | 主要依据 |
+|---|---|---|---|
+| 循环与阶段 | 一个需求要重入模型多少次，何处返工/分支？ | 每需求step/工具次数分布、阶段转换、依赖图 | [8,9,10] |
+| 上下文演化 | 长ISL来自新增还是重复历史，何时压缩？ | 每step的prefix/未缓存/新增/输出轨迹，压缩前后对照 | [8,10,1] |
+| 缓存与重算 | 不命中因内容改变、过期还是资源驱逐？ | 条件命中率、前缀一致性、冗余prefill量与恢复延迟 | [8,9,11] |
+| 间隔与状态 | 模型不运行时，状态留多久、占多少资源？ | 工具/用户间隔CDF、KV/沙盒GB·s、恢复首轮延迟 | [1,12,22] |
+| 整任务关键路径 | 推理更快是否使整题更快？ | API/工具/编排互斥分解，重叠DAG，整题尾延迟 | [13,21,19] |
+| 控制面与工具冗余 | 摘要、工具schema、反复读取/搜索花了多少？ | 辅助调用及token占比、上下文组成、安全复用上界 | [1,8] |
+| 资源与阶段耦合 | 是GPU、CPU、存储、网络还是共享干扰？ | 关联阶段的利用率/带宽/I/O，隔离或资源干预对照 | [15,16,17] |
+| 并发与有效收益 | 在质量和SLA约束内能服务多少工作？ | 到达/并发扫描、goodput、公平性、完成时间与失败/停止 | [3,11,12,13] |
+
+质量只作为性能比较的约束：同一任务、初态、验收和预算下比较完成时间；把未完成、基础设施故障和限时停止另列。任务级P90/P99需要足够独立任务/重复，不能拿数千模型请求代替数千任务试验。卸载、压缩、工具缓存等优化也必须检查恢复和结果正确性，而不是仅看吞吐上涨。
+
+### 2.9. 本地实验在该研究体系中的位置
+
+| 研究问题 | 当前已有证据 | 尚未覆盖/不能推出 |
 |---|---|---|
-| 评测目标 | 做对任务、推进过程、服务效率、可靠性或安全 | 把高吞吐当成能力更强 |
-| 任务与模态 | API、代码、终端、网页、桌面、研究；文本或多模态 | 用文本token吞吐覆盖视觉与工具开销 |
-| 执行驱动 | 固定轨迹、Agent自主闭环、模拟用户、生产轨迹 | 把长度回放当作真实任务执行 |
-| 状态范围 | 历史、数据库、文件、外部副作用、语义记忆、KV | 将所有状态都理解为可随意删除的缓存 |
-| 到达与资源 | 固定并发、外部到达、轮间等待、共享/隔离、预算 | 把推理并发等同于在线会话容量 |
-| 判定与重复 | 答案、测试、环境终态、过程进展、重复试验、故障分类 | 把自报完成、单轮成功或基础设施失败当作能力结论 |
+| 请求服务与并发 | AgentX五个并发点、延迟/吞吐/缓存，正常缓存新服务 | 生产到达、长期暂停、严格共同有效子集及运行间置信区间 |
+| 整任务与控制面 | 12组真实执行、2349次API、工具区间、辅助调用和验收状态 | 稳定任务级尾部、完整语义阶段与全部编排成本 |
+| 上下文与缓存失效 | 压缩/输入增长标注、动态通知源码与请求对照 | 全量新增信息量、所有驱逐原因、修复后的端到端收益 |
+| 状态与资源 | GPU、已分配KV及部分CPU/I/O时序 | 全部驻留状态、GB·s、完整宿主背景负载、卸载/恢复和HBM带宽瓶颈 |
 
-这六维需要分别说明。例如，同一个代码任务既可以用于自主解题的能力测量，也可以把采集的请求轨迹固定后用于引擎性能测量，但后一种实验不再评估新模型是否会自行产生正确解法。
-
-### 2.3. Coding Agent：题库、执行器与验证器必须拆开
-
-Coding Agent不是一次代码补全，而是围绕仓库与运行环境，反复搜索、阅读、修改、执行和检验的过程。评测至少包含三个可独立变化的对象：题库提供问题与初态，执行器决定模型怎样使用工具，验证器决定产物是否合格。换模型时若同时改变接口、搜索策略或重试预算，不能把结果差异全部归给模型。
-
-| 工作 | 方法重点 | 主要验收/比较对象 | 实验设计启示 |
-|---|---|---|---|
-| SWE-bench[19] | 从真实GitHub问题到仓库修复 | 修改后的代码能否通过测试 | 冻结仓库与依赖，不按补丁文本相似度判分 |
-| SWE-bench Pro[33] | 企业级长时、多文件问题 | 更复杂问题的解决能力 | 公开、保留和商业集合分开报告 |
-| SWE-bench-Live[34] | 可更新任务与专用Docker环境 | 新近、跨仓库问题上的可执行修复 | 冻结评测快照，更新性不等于绝无污染 |
-| Terminal-Bench 2.0[20] | 真实终端任务、独立环境和验证测试 | 代码、环境或终态产物 | 不应把所有终端任务简化为一份diff |
-| SWE-agent[32] | 面向Agent设计ACI，连接阅读、编辑与执行 | 同类软件任务上的接口效果 | 工具接口也是控制变量 |
-| Agentless[35] | 定位→修复→补丁验证的三阶段流程 | 简单流程与自主Agent的对照 | 不能预设更多自主轮数就更好 |
-| OpenHands[36] | 沙盒内统一代码、命令行与网页能力 | 可扩展Agent及跨任务评价 | 执行平台不是单一题库 |
-| OpenHands-Versa[47] | 编辑执行、搜索、视觉浏览和文件访问 | Coding向一般工作任务迁移 | 通用性需要跨任务验证 |
-
-SWE-bench类任务重视“问题是否被修复”；Terminal-Bench类任务还包括环境配置、运行程序和产生工件。耗时常含安装、编译、测试和等待，模型只是工作流的一部分。仅统计推理调用会漏掉题目要求真正完成的工作，简单截断工具返回也可能改变解题能力和后续输入分布。
-
-SWE-agent与Agentless提供了重要的方法对照：一个研究交互接口，另一个用固定流程检验是否需要复杂自主策略。模型比较与执行器比较应拆开：先固定执行器换模型，再固定模型比较执行器；分别记录定位错误、修改错误、验证失败、无进展循环和预算耗尽，而不只保留最终成功率。
-
-可复用的Coding协议是：版本化题面/初始源码/依赖与验证器 → 每次试验隔离工作区 → 保留候选、工具和请求轨迹 → 独立副本验收 → 保留失败与停止状态。参考答案和隐藏验收不能进入答题上下文；参考解可用于检查可解性，但不能充当候选。验证器通过也只证明其测试覆盖，不能自动证明全部语义正确。
-
-### 2.4. Work Agent：从网页动作走向可交付的工作结果
-
-这里将Work Agent定义为通过浏览器、桌面、文件或业务API完成实际工作流程的Agent，而非普通问答。结果可能是更新业务记录、生成表格、完成跨应用协作或提供有依据的信息。评价应沿“业务目标→依赖步骤→环境终态/文件产物”展开，而不是看点击或调用次数是否多。
-
-| 工作 | 工作环境与任务结构 | 主要检查对象 | 关键区别 |
-|---|---|---|---|
-| WorkArena[37] | ServiceNow企业应用与BrowserGym | 知识工作的业务操作 | 固定业务记录初态与观察/动作接口 |
-| WorkArena++[38] | 组合检索、规划、推理与操作 | 多步骤工作流程 | 难度来自依赖关系，不只是更多token |
-| TheAgentCompany[39] | 公司内网站、程序、代码和同事通信 | 跨应用的实际工作交付 | 工具成功不等于业务目标达成 |
-| CRMArena-Pro[43] | 销售、服务与报价等专业场景 | 业务完成、交互及保密约束 | 业务交互有状态与规则，不是聊天风格评分 |
-| WebArena[16] | 可复现网站中的长路径动作 | 功能性任务终态 | 浏览器和网页状态属于环境 |
-| VisualWebArena[17] | 需要视觉理解的网页任务 | 视觉落地后的任务完成 | 视觉和动作成本不能只用文本token解释 |
-| OSWorld[18] | 真实桌面、文件与跨应用操作 | 初态对应的执行式验收 | 截图、GUI和文件恢复纳入协议 |
-| AssistantBench[40] | 开放网页上的现实信息搜集 | 答案正确与导航效果 | 记录内容漂移、检索时间和证据 |
-| BrowseComp[42] | 持续查找难获取信息 | 简短可核验的最终答案 | 浏览检索切面不等于完整办公交付 |
-| SpreadsheetBench[41] | Excel需求与变化输入文件 | 多用例下的表格变换 | 单个样例正确不足以证明泛化 |
-| SpreadsheetBench 2[46] | 跨工作表生成、调试和可视化 | 端到端业务表格产物 | 不与旧版孤立操作分数直接相减 |
-
-这条研究线体现了从局部动作到组合流程、从单应用到跨应用、从答案到真实产物的扩展。应同时保留业务对象、文件版本与工具动作，允许不同正确路径，不强制与参考动作序列逐步一致；但权限、保密、不可逆副作用和指定流程约束不能因终态看似正确而忽略。
-
-WorkArena/OSWorld等可控环境适合重置和重复；AssistantBench/BrowseComp依赖开放网页，更容易漂移，需记录时刻、证据及失效原因。模拟业务数据能提高可重复性，但模拟器延迟不是生产API性能。性能测量还应区分推理服务、工具执行、浏览器/桌面观察、跨应用通信与人工/模拟用户等待。
-
-### 2.5. 科研与ML工程：代码、实验和结论是不同验收层
-
-| 工作 | 执行工作 | 判定方式 | 避免过度解释 |
-|---|---|---|---|
-| MLE-bench[21] | 数据准备、训练和机器学习实验 | 竞赛任务结果 | 不遗漏Agent所启动程序的资源 |
-| ScienceAgentBench[44] | 科研工作流中的可执行任务 | Python程序、运行结果及成本 | 科研步骤完成不等于端到端科学发现 |
-| PaperBench[45] | 理解论文、开发代码并执行复现实验 | 分层rubric与经验证的评判器 | 分项完成度不是整篇复现成功率 |
-
-与普通代码修复相比，这类Agent会启动长时间运行的程序并管理大量产物。应区分“源码具备实现”“程序运行成功”“数值/实验符合要求”和“结论得到支持”，并记录答题、运行和验收成本。Agent服务与其训练/测试程序若共用资源，还要说明归属和竞争，不能把所有GPU负载都归为推理。
-
-普通聊天和记忆仅作背景：LongMemEval、LoCoMo[22,23]研究跨会话信息保持，不直接验收代码或办公产物，也不是KV缓存命中测试；本节不展开聊天能力排名。
-
-### 2.6. 执行架构、过程诊断与验收可信度
-
-![Coding与Work Agent执行架构](../figures/11_coding_work_architectures.png)
-
-图R2：SWE-agent的ACI闭环、Agentless的固定流程、OpenHands/Versa的通用沙盒工具架构，依据[32,35,36,47]抽象重绘。独立验收表示评测边界，不声称原项目实现完全一致，也不是本仓库已集成的框架。
-
-AgentBoard的进展度量[9]可辅助区分“逐步推进”与“反复无效读写”；MultiAgentBench[31]则要求额外检查协作消息、协调与里程碑。对Coding/Work Agent，可以按定位、执行、验证和返工阶段观测，但不能简单累加并行区间作为整题耗时。
-
-τ-bench与τ²-bench[14,15]研究需要用户协作的有状态业务流程，不是简单聊天评分，其模拟用户、规则与共享环境可为Work Agent提供控制方法。ToolBench、StableToolBench、BFCL[11～13]提供工具组件背景，但函数调用正确不等于工作交付正确。真实API与模拟器之间有稳定性取舍，不能把模拟工具速度称为真实工作流速度。
-
-AgentDojo[24]提醒，读取不可信代码、网页或工具输出时，要同时评估安全和正常任务可用性。一律拒绝工具可能阻断攻击，也阻断工作；这里不把本地通知适配问题直接定性为提示注入漏洞。
-
-2026年的Terminal-Bench难度有效性研究[29]检查“全部Agent失败”背后的题面、验证器和基础设施证据。结论针对特定审阅语料，不代表所有版本存在相同缺陷。共同原则是分开任务失败、环境失败、预算耗尽、验证异常和未验收；发现问题后保留旧轮并重测，不拼接为更好的正常结果。
-
-### 2.7. 三种实验范式：固定回放、任务闭环与全栈观测
-
-![三种Agent评测范式](../figures/10_evaluation_paradigms.png)
-
-图R3：根据AgentX[3]、Coding/Work任务基准[16～21,33,34,37～46]及系统观测工作[1,25]抽象重绘。虚线表示可选或不在该范式中的部分；不是把这些项目组合成已实现的新系统。
-
-| 范式 | 固定什么、允许什么变化 | 能回答 | 不能单独回答 |
-|---|---|---|---|
-| 固定轨迹回放 | 固定请求集合、前缀结构、输出预算；改变服务条件 | 引擎吞吐、延迟、缓存与并发敏感性 | 新模型是否会选对工具、完成任务 |
-| Agent自主闭环 | 固定任务与初态；下一步由当前输出和观察决定 | 正确性、实际路径、重试与完成时间 | 在相同请求工作量下谁的引擎更快 |
-| 全栈观测/生产补充 | 关联模型、工具、状态与资源事件；保留真实到达或等待 | 关键路径、状态寿命、控制面及资源关联 | 仅凭相关性证明某项优化的因果收益 |
-
-AgentX 适合第一类。本文使用的 Weka loader 保留长度与共享结构，不重建原始代码语义或执行工具。vLLM 的吞吐—交互速度图提供了服务层表达方式[4]，但其成本参数和硬件结果不直接成为本地结果。
-
-还必须将“谁决定下一步”与“请求怎样到达”分开：固定并发回放可以是闭环负载，每个槽位等响应后再发下一条；按外部时间戳或到达率发请求则是另一种负载协议。这里的闭环负载并不等于Agent自主解题闭环。同一批到达时间若被客户端排队拖延，还应报告实际发出时间与计划时间偏差，避免把发生器瓶颈当作服务容量。
-
-### 2.8. 服务系统方法：复用、等待、依赖与可观测性
-
-| 工作 | 方法焦点 | 应重点测的量 | 不应混淆的概念 |
-|---|---|---|---|
-| PagedAttention[5] | 分页式KV块管理与共享 | 有效块占用、碎片、共享及吞吐 | 分配块不等于全部可复用驻留 |
-| SGLang[26] | 程序化执行及RadixAttention前缀复用 | 跨调用共享、调度与程序耗时 | 前缀复用不是语义记忆正确性 |
-| InferCept[28] | 外部交互暂停时的状态保留/换出/重算取舍 | 等待时间、占用、传输与恢复延迟 | 活跃请求并发不是暂停会话总数 |
-| Parrot[27] | 通过Semantic Variable暴露请求数据流依赖 | 应用依赖、完成时间与服务效率 | 单请求优化不必然优化应用关键路径 |
-| AgentSight[25] | 边界通信与eBPF事件关联 | 跨进程调用、系统行为和异常路径 | 可观测性不是任务验收器 |
-| AgentSysBench[1] | 工作负载与服务栈联合说明、组件测量及生产补充 | 端到端时间、状态、资源和控制面 | 实验室受控观察与生产轨迹不互相替代 |
-
-AgentSysBench 将研究对象拓展到模型之外的工具、环境与长期状态。其论文和用户提供的 papers.cool 入口是同一项研究[1,2]，不重复计数。本文借鉴其跨层视角，但没有将该论文中的任务感知服务、放置、卸载或工具缓存收益写成本地实测。
-
-这些工作针对的机制不同，不能只汇成一个“缓存优化”：KV块管理、公共前缀共享、暂停状态管理、请求依赖调度和观测关联分别有不同自变量。vLLM的缓存与Graph文档[6,7]提供实现背景，根因判断仍需实际安装源码和控制实验，不能由最新文档反推旧部署行为。
-
-### 2.9. 统一评测协议与指标选择
-
-基于以上方法，本文建议用“质量约束下的效率”组织结果，保留分层指标而非过早压成一个分数。
-
-| 层次 | 核心指标 | 必须同时注明的条件 |
-|---|---|---|
-| 任务质量 | 成功、过程进展、规则合规、失败类别 | 验收器、任务版本、初始环境、可修改范围 |
-| 重复可靠性 | 成功率、pass^k、pass@k | 每题重复数、独立重置、采样和预算 |
-| 请求服务 | TTFT、TPOT、吞吐、排队、缓存、错误 | 实际输出、分位数口径、有效集合、服务配置 |
-| 整任务效率 | 完成时间、关键路径、通过任务吞吐 | 未完成任务、并行重叠、启动/验收是否计入 |
-| 状态与记忆 | 记忆正确性、占用、暂停时间、恢复首轮延迟 | 事实更新、压缩、KV保留/淘汰与权限 |
-| 资源和成本 | CPU/GPU秒、内存、I/O、网络、token及费用 | 可归属范围、采样、失败开销与辅助调用 |
-| 安全与稳健性 | 攻击成功、正常任务可用性、恢复与重试 | 威胁模型、工具错误、环境漂移和干预范围 |
-
-τ-bench 的 pass^k 衡量同一任务在 k 次独立试验都成功的一致性；常见 pass@k 衡量至少一次成功。二者方向不同，不能互换。大量请求可以支持请求级分位数，却不能替代独立任务重复；多次都成功也不证明评测器本身正确。
-
-一个可复用的实验闭环是：冻结任务清单与初态 → 校验参考解/验收器 → 固定非研究变量与预算 → 运行并关联模型、工具、状态、资源 → 独立验收与故障分类 → 按任务重复统计 → 在质量和SLA约束下比较效率。缓存清空属于被研究的条件，而不是所有实验必须永远清空：容量曲线需要防止跨点污染，跨会话复用研究则需要明确保留哪些状态。
-
-服务研究宜先固定轨迹隔离引擎因素，再用自主任务闭环检验端到端效果，最后用真实到达与长暂停补充生产适用性。GPU/Node/容器Exporter提供资源证据，只有与任务和调用身份关联后才能用于归因；它们不能生成正确答案或替代验收。
-
-### 2.10. 横向归纳与本研究的位置
-
-现有工作共同揭示的评测方法趋势可以归纳为三点，而非直接合并各论文的成绩：
-
-1. 从“答案或调用格式正确”走向“可验证终态、过程进展和重复可靠性”，需要把任务、执行器和验证器一起版本化。
-2. 从“模型处理请求”走向“模型—工具—状态—环境联合执行”，需要把真实路径、等待和控制面开销纳入计量。
-3. 从“某次实验更快”走向“质量与SLA约束内、工作量和资源可比的效率”，需要组合固定回放、任务闭环与跨层观测，而非期待单一基准包办。
-
-本报告的AgentX、四道真实任务和缓存分析只覆盖其中部分服务与观测问题。四题属于代码工程任务，不等于已运行正式SWE-bench或Terminal-Bench；没有执行企业/GUI/科研基准、协作拓扑或安全评测。后文实测只支持实际覆盖范围，文献梳理不代表这些测试已经完成。
+所以，后文真实任务不是给Agent题库增加一张成绩榜，而是补充回放看不到的执行路径、工具等待和缓存失效机制。后续应优先补齐“轮间状态—关键路径—资源归因”的关联证据，再通过受控策略干预验证实际收益；不能把文献中的卸载、调度或缓存收益写成本地已实现结果。
 
 ## 3. 方法
 
@@ -516,84 +477,42 @@ AgentX 每点一次，真实任务每题每模型一次；零命中仅三轮且�
 
 [7] vLLM documentation. [CUDA Graphs](https://docs.vllm.ai/en/latest/design/cuda_graphs/)。
 
-[8] Xiao Liu, et al. AgentBench: Evaluating LLMs as Agents. 2023. [原论文](https://arxiv.org/abs/2308.03688)。
+[8] Kan Zhu, et al. TraceLab: Characterizing Coding Agent Workloads for LLM Serving. 2026；本次核对v2. [原始来源](https://arxiv.org/abs/2606.30560v2)。
 
-[9] Chang Ma, et al. AgentBoard: An Analytical Evaluation Board of Multi-turn LLM Agents. 2024. [原论文](https://arxiv.org/abs/2401.13178)。
+[9] Banruo Liu, et al. Agentic Coding in the Wild: Characterizing GitHub Copilot Traces at Production Scale. 2026；本次核对v1. [原始来源](https://arxiv.org/abs/2608.00101v1)。
 
-[10] Grégoire Mialon, et al. GAIA: a benchmark for General AI Assistants. 2023. [原论文](https://arxiv.org/abs/2311.12983)。
+[10] Yichao Yuan, et al. Agentic AI Workload Characteristics. 2026；本次核对v2. [原始来源](https://arxiv.org/abs/2605.26297v2)。
 
-[11] Yujia Qin, et al. ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs. 2023. [原论文](https://arxiv.org/abs/2307.16789)。
+[11] Shubham Tiwari, et al. CacheWise: Understanding Workloads and Optimizing KVCache Management for Efficiently Serving LLM Coding Agents. 2026；本次核对v1. [原始来源](https://arxiv.org/abs/2606.16824v1)。
 
-[12] Zhicheng Guo, et al. StableToolBench: Towards Stable Large-Scale Benchmarking on Tool Learning of Large Language Models. 2024. [原论文](https://arxiv.org/abs/2403.07714)。
+[12] Hanchen Li, et al. Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live. 2025；本次核对v7. [原始来源](https://arxiv.org/abs/2511.02230v7)。
 
-[13] Shishir G Patil, et al. The Berkeley Function Calling Leaderboard (BFCL): From Tool Use to Agentic Evaluation of Large Language Models. 2025. [原论文](https://proceedings.mlr.press/v267/patil25a.html) · [多轮方法说明](https://gorilla.cs.berkeley.edu/blogs/13_bfcl_v3_multi_turn.html)。
+[13] Michael Luo, et al. Autellix: An Efficient Serving Engine for LLM Agents as General Programs. 2025；本次核对v1. [原始来源](https://arxiv.org/abs/2502.13965v1)。
 
-[14] Shunyu Yao, et al. τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains. 2024. [原论文](https://arxiv.org/abs/2406.12045)。
+[14] Jiaqi Zhao, et al. Can Agent Harnesses and Inference Engines Hear Each Other? The HEAR Protocol for Agentic LLM Serving. 2026；本次核对v1. [原始来源](https://arxiv.org/abs/2610.06597v1)。
 
-[15] Victor Barres, et al. τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment. 2025. [原论文](https://arxiv.org/abs/2506.07982)。
+[15] Ritik Raj, et al. Towards Understanding, Analyzing, and Optimizing Agentic AI Execution: A CPU-Centric Perspective. 2025；本次核对v3. [原始来源](https://arxiv.org/abs/2511.00739v3)。
 
-[16] Shuyan Zhou, et al. WebArena: A Realistic Web Environment for Building Autonomous Agents. 2023. [原论文](https://arxiv.org/abs/2307.13854)。
+[16] Jirong Yang, et al. Architectural Implications of Agentic AI Workflows. 2026；本次核对v1. [原始来源](https://arxiv.org/abs/2608.04458v1)。
 
-[17] Jing Yu Koh, et al. VisualWebArena: Evaluating Multimodal Agents on Realistic Visual Web Tasks. 2024. [原论文](https://arxiv.org/abs/2401.13649)。
+[17] Nikos Pagonas, et al. Cortex: Workflow-Aware Resource Pooling and Scheduling for Agentic Serving. 2025；本次核对v1. [原始来源](https://arxiv.org/abs/2510.14126v1)。
 
-[18] Tianbao Xie, et al. OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments. 2024. [原论文](https://arxiv.org/abs/2404.07972)。
+[18] Zhuohang Bian, et al. TokenCake: A KV-Cache-centric Serving Framework for LLM-based Multi-Agent Applications. 2025；本次核对v5. [原始来源](https://arxiv.org/abs/2510.18586v5)。
 
-[19] Carlos E. Jimenez, et al. SWE-bench: Can Language Models Resolve Real-World GitHub Issues?. 2023. [原论文](https://arxiv.org/abs/2310.06770)。
+[19] Yusheng Zheng, et al. AgentSight: System-Level Observability for AI Agents Using eBPF. 2025. [原始来源](https://arxiv.org/abs/2508.02736)。
 
-[20] Mike A. Merrill, et al. Terminal-Bench: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces. 2026. [原论文](https://arxiv.org/abs/2601.11868)。
+[20] Lianmin Zheng, et al. SGLang: Efficient Execution of Structured Language Model Programs. 2023. [原始来源](https://arxiv.org/abs/2312.07104)。
 
-[21] Jun Shern Chan, et al. MLE-bench: Evaluating Machine Learning Agents on Machine Learning Engineering. 2024. [原论文](https://arxiv.org/abs/2410.07095)。
+[21] Chaofan Lin, et al. Parrot: Efficient Serving of LLM-based Applications with Semantic Variable. 2024. [原始来源](https://arxiv.org/abs/2405.19888)。
 
-[22] Di Wu, et al. LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory. 2024. [原论文](https://arxiv.org/abs/2410.10813)。
+[22] Reyna Abhyankar, et al. InferCept: Efficient Intercept Support for Augmented Large Language Model Inference. 2024. [原始来源](https://arxiv.org/abs/2402.01869)。
 
-[23] Adyasha Maharana, et al. Evaluating Very Long-Term Conversational Memory of LLM Agents. 2024. [原论文](https://arxiv.org/abs/2402.17753)。
+[23] Carlos E. Jimenez, et al. SWE-bench: Can Language Models Resolve Real-World GitHub Issues?. 2023. [原始来源](https://arxiv.org/abs/2310.06770)。
 
-[24] Edoardo Debenedetti, et al. AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents. 2024. [原论文](https://arxiv.org/abs/2406.13352)。
+[24] Mike A. Merrill, et al. Terminal-Bench: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces. 2026. [原始来源](https://arxiv.org/abs/2601.11868)。
 
-[25] Yusheng Zheng, et al. AgentSight: System-Level Observability for AI Agents Using eBPF. 2025. [原论文](https://arxiv.org/abs/2508.02736)。
+[25] Alexandre Drouin, et al. WorkArena: How Capable Are Web Agents at Solving Common Knowledge Work Tasks?. 2024. [原始来源](https://arxiv.org/abs/2403.07718)。
 
-[26] Lianmin Zheng, et al. SGLang: Efficient Execution of Structured Language Model Programs. 2023. [原论文](https://arxiv.org/abs/2312.07104)。
+[26] Frank F. Xu, et al. TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks. 2024. [原始来源](https://arxiv.org/abs/2412.14161)。
 
-[27] Chaofan Lin, et al. Parrot: Efficient Serving of LLM-based Applications with Semantic Variable. 2024. [原论文](https://arxiv.org/abs/2405.19888)。
-
-[28] Reyna Abhyankar, et al. InferCept: Efficient Intercept Support for Augmented Large Language Model Inference. 2024. [原论文](https://arxiv.org/abs/2402.01869)。
-
-[29] Edward Lue Chee Lip, et al. What Makes a Terminal-Bench Task Hard? Separating Genuine Hardness from Fake-Hardness on an Adjudicated Agentic Corpus. 2026. [原论文](https://arxiv.org/abs/2609.26826)。
-
-[30] Shunyu Yao, et al. ReAct: Synergizing Reasoning and Acting in Language Models. 2022. [原论文](https://arxiv.org/abs/2210.03629)。
-
-[31] Kunlun Zhu, et al. MultiAgentBench: Evaluating the Collaboration and Competition of LLM agents. 2025. [原论文](https://arxiv.org/abs/2503.01935)。
-
-[32] John Yang, et al. SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering. 2024. [原论文](https://arxiv.org/abs/2405.15793)。
-
-[33] Xiang Deng, et al. SWE-Bench Pro: Can AI Agents Solve Long-Horizon Software Engineering Tasks?. 2025. [原论文](https://arxiv.org/abs/2509.16941)。
-
-[34] Linghao Zhang, et al. SWE-bench Goes Live!. 2025. [原论文](https://arxiv.org/abs/2505.23419)。
-
-[35] Chunqiu Steven Xia, et al. Agentless: Demystifying LLM-based Software Engineering Agents. 2024. [原论文](https://arxiv.org/abs/2407.01489)。
-
-[36] Xingyao Wang, et al. OpenHands: An Open Platform for AI Software Developers as Generalist Agents. 2024. [原论文](https://arxiv.org/abs/2407.16741)。
-
-[37] Alexandre Drouin, et al. WorkArena: How Capable Are Web Agents at Solving Common Knowledge Work Tasks?. 2024. [原论文](https://arxiv.org/abs/2403.07718)。
-
-[38] Léo Boisvert, et al. WorkArena++: Towards Compositional Planning and Reasoning-based Common Knowledge Work Tasks. 2024. [原论文](https://arxiv.org/abs/2407.05291)。
-
-[39] Frank F. Xu, et al. TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks. 2024. [原论文](https://arxiv.org/abs/2412.14161)。
-
-[40] Ori Yoran, et al. AssistantBench: Can Web Agents Solve Realistic and Time-Consuming Tasks?. 2024. [原论文](https://arxiv.org/abs/2407.15711)。
-
-[41] Zeyao Ma, et al. SpreadsheetBench: Towards Challenging Real World Spreadsheet Manipulation. 2024. [原论文](https://arxiv.org/abs/2406.14991)。
-
-[42] Jason Wei, et al. BrowseComp: A Simple Yet Challenging Benchmark for Browsing Agents. 2025. [原论文](https://arxiv.org/abs/2504.12516)。
-
-[43] Kung-Hsiang Huang, et al. CRMArena-Pro: Holistic Assessment of LLM Agents Across Diverse Business Scenarios and Interactions. 2025. [原论文](https://arxiv.org/abs/2505.18878)。
-
-[44] Ziru Chen, et al. ScienceAgentBench: Toward Rigorous Assessment of Language Agents for Data-Driven Scientific Discovery. 2024. [原论文](https://arxiv.org/abs/2410.05080)。
-
-[45] Giulio Starace, et al. PaperBench: Evaluating AI's Ability to Replicate AI Research. 2025. [原论文](https://arxiv.org/abs/2504.01848)。
-
-[46] Jian Zhu, et al. SpreadsheetBench 2: Evaluating Agents on End-to-End Business Spreadsheet Workflows. 2026. [原论文](https://arxiv.org/abs/2606.29955)。
-
-[47] Aditya Bharat Soni, et al. Coding Agents with Multimodal Browsing are Generalist Problem Solvers. 2025. [原论文](https://arxiv.org/abs/2506.03011)。
-
-以上在线资料核对日期为2026-10-20；文献观点、上游文档和本地实测分开引用。年份按原稿首次发布或所引会议版本标注；[20]明确指2.0，[13]补充V3多轮方法。机器可读书目见[原实验书目](../references.bib)与[调研补充书目](../references.survey.bib)。
+以上在线资料核对日期为2026-10-20，年份按首次稿件发布或所引会议版本标注。核心Workload/系统研究、场景背景与本地实测分开；不合并不同协议的性能数据。机器可读书目见[基础书目](../references.bib)与[Workload调研书目](../references.survey.bib)。

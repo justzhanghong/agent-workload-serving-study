@@ -126,11 +126,13 @@ def main():
     works = literature["works"]
     refs = [work["ref"] for work in works]
     grouped = [ref for group in literature["focusGroups"] for ref in group["refs"]]
-    require(len(works) == len(set(refs)) == 43, "43 unique reviewed works")
+    require(len(works) == len(set(refs)) == 22, "22 unique workload/core and background entries")
+    require(sum(w["scope"] == "core" for w in works) == literature["coreWorks"] == 18, "18 workload/system core studies and tools")
+    require(sum(w["scope"] == "scenario-background" for w in works) == literature["backgroundWorks"] == 4, "4 scenario-only background works")
     require(sorted(grouped) == sorted(refs), "literature focus groups cover each work once")
     require(refs.count(1) == 1 and 2 not in refs, "papers.cool discovery not double counted")
-    require([group["name"] for group in literature["focusGroups"]][:2] == ["Coding与终端工程","Work与企业工作流"], "Coding/Work literature first")
-    require(set(map(int,re.findall(r"^\[(\d+)\] ",report,re.M))) == set(range(1,48)), "47 report reference entries")
+    require([group["name"] for group in literature["focusGroups"]][:2] == ["多轮负载特征与生产轨迹","轮间KV状态与缓存管理"], "workload characterization and state lead review")
+    require(set(map(int,re.findall(r"^\[(\d+)\] ",report,re.M))) == set(range(1,27)), "26 report references including documentation")
     index = (ROOT/"docs/literature-index.md").read_text(encoding="utf-8")
     bib = (ROOT/"references.survey.bib").read_text(encoding="utf-8")
     for work in works:
@@ -138,11 +140,36 @@ def main():
         require(all(work.get(k) for k in ("title","authors","method","measure","boundary")), work["name"]+" review fields")
         if work["ref"] >= 8:
             require(f'@misc{{surveyRef{work["ref"]},' in bib and work["title"] in report, work["name"]+" report and BibTeX")
-    for name in ("SWE-bench","SWE-agent","Agentless","OpenHands","WorkArena","TheAgentCompany","CRMArena-Pro","SpreadsheetBench","PaperBench"):
+    for name in ("TraceLab","Copilot","CacheWise","Continuum","Autellix","HEAR","AgentSysBench","InferCept","CPU","KV"):
         require(name in report.split("## 3. 方法")[0], name+" in focused related work")
     readme = (ROOT/"README.md").read_text(encoding="utf-8")
-    require("figures/09_evaluation_taxonomy.png" in readme and "| 研究主线 |" in readme, "README foregrounds survey diagram and matrix")
+    require("figures/09_evaluation_taxonomy.png" in readme and "| 分析事项 |" in readme, "README foregrounds workload analysis diagram and matrix")
+    require("figures/11_workload_state_lifecycle.png" in readme, "README state lifecycle diagram")
+    for axis in ("循环与阶段","上下文演化","缓存与重算","间隔与状态","整任务关键路径","控制面与工具冗余","资源与阶段耦合","并发与有效收益"):
+        require(axis in readme and axis in report, axis+" workload question in README/report")
     require(readme.index("figures/09_") < readme.index("figures/01_"), "literature before experimental figure in README")
+    for name in ("02_real_task_time", "03_calls_tokens", "04_notification_valleys", "07_resource_timelines"):
+        require(f"figures/{name}.png" in readme, name+" prominently shown in README")
+    task_names = {"task01":"前缀缓存与Prefill调度修复", "task02":"PP/offload槽宽与几何处理",
+                  "task03":"GTCRN ConvTranspose量化修复", "task04":"ViT量化图冗余操作优化"}
+    for task, name in task_names.items():
+        cells = []
+        for key in ("v41", "v4", "qwen"):
+            case = next(c for c in real["cases"] if c["modelKey"] == key and c["task"] == task)
+            state = ("自报完成" if case["status"] == "self-reported" else
+                     ("完整验收通过" if task == "task03" else "已有产物验收通过") if case["status"] == "passed" else
+                     "历史中止" if case["legacyStop"] else "限时未完成")
+            cells.append(f'{case["elapsedMinutes"]:.2f}/{state}')
+        require("| "+" | ".join(["任务"+str(int(task[-2:]))+"："+name, *cells])+" |" in readme, task+" README elapsed/status row")
+    task3 = [next(c for c in real["cases"] if c["task"] == "task03" and c["modelKey"] == k) for k in ("v41","qwen")]
+    for title, field in (("整题(min)","elapsedMinutes"),("工具不与API重叠(min)","toolMinutes")):
+        require("| "+" | ".join([title,*[f'{c[field]:.2f}' for c in task3]])+" |" in readme, title+" README paired example")
+    require("| 模型API(min/占整题) | "+" | ".join(f'{c["apiMinutes"]:.2f}/{100*c["apiMinutes"]/c["elapsedMinutes"]:.2f}%' for c in task3)+" |" in readme, "README task3 API time/share")
+    for model in replay["models"].values():
+        best = max((r for r in replay["runs"] if r["model"] == model and metrics(r)["sla_pass"]), key=lambda r:r["concurrency"])
+        require(f'| {aliases[model]} | {best["concurrency"]} | {best["ttft"]["p90"]/1000:.3f} | {best["tpot"]["p90"]:.2f} | {metrics(best)["total_tpgs"]:.2f} |' in readme, model+" README measured SLA point")
+    for label, count in (("上下文压缩",20),("system前缀变化",46),("输入增长、分母稀释",28)):
+        require(f"| {label} | {count} |" in readme, label+" README annotation count")
     pdf_manifest = json.loads((ROOT/"paper/report_pdf.json").read_text(encoding="utf-8"))
     pdf_path = ROOT/"paper/report.zh-CN.pdf"
     require(pdf_path.read_bytes().startswith(b"%PDF-") and pdf_path.stat().st_size > 100000, "nontrivial PDF")
@@ -160,6 +187,7 @@ def main():
         cs = [c for c in real["cases"] if c["modelKey"] == key]
         vals = [sum(c[field] for c in cs) for field in ("modelCalls","toolCalls","auxiliaryCalls","inputTokens","cachedTokens","outputTokens")]
         require("| " + " | ".join([{"v41":"V4.1","v4":"V4","qwen":"Qwen"}[key], *map(str,vals)]) + " |" in report, key+" report token totals")
+        require("| " + " | ".join([{"v41":"V4.1","v4":"V4","qwen":"Qwen"}[key], *map(str,(vals[0],vals[1],vals[3],vals[5]))]) + " |" in readme, key+" README call/token totals")
     for doc in ROOT.rglob("*.md"):
         if any(part in EXCLUDED for part in doc.relative_to(ROOT).parts): continue
         text = doc.read_text(encoding="utf-8")
@@ -192,7 +220,7 @@ def main():
     for path in pngs:
         require(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") and path.stat().st_size > 10000, path.name+" valid nontrivial PNG")
     fingerprints = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.rglob("*")) if p.is_file() and p.name != "verification.json" and not any(part in EXCLUDED for part in p.relative_to(ROOT).parts)}
-    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "reviewWorks":43,"figurePairs":11,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence, literature structure and report/PDF consistency only; not an independent source audit", "filesSha256":fingerprints}
+    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":18,"scenarioBackgroundWorks":4,"figurePairs":11,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence, workload review structure and report/PDF consistency only; not an independent source audit", "filesSha256":fingerprints}
     (ROOT/"verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k != "filesSha256"},ensure_ascii=False))
 

@@ -1,13 +1,13 @@
 {
   "date": "2026-10-20",
   "source": "paper/report.zh-CN.md",
-  "sourceSha256": "1dd746b8002cf0cf3648c15916c851053c884de62bcc760f5cc87e3aa28bb506",
+  "sourceSha256": "f470e21d16d23311e3bb02988965f9087dda7e6fe0e90bbc09c8dee9e3de5938",
   "pdf": "paper/report.zh-CN.pdf",
-  "pdfSha256": "3401044e152ec8ad270865723ff73df1b2820d907ff3932a7e1b9016621a64c0",
+  "pdfSha256": "a2bf21c87e957c6e5eab42acb3ebd48753e50237e737ed19f2e641506e7cb0c3",
   "embeddedFiguresSha256": {
-    "figures/09_evaluation_taxonomy.svg": "d4a8991f5b7d8af0ead16d33563eaf37f960d13381a58818c0b70317349c142b",
-    "figures/11_coding_work_architectures.svg": "dbd19a87317028179a350e347b800550dee5acaabc89a4212ccb358e0a62495e",
-    "figures/10_evaluation_paradigms.svg": "f03a60ca006c175ba9bdb833f425d3260c6123dae45e11dec5140911447d0fc9",
+    "figures/09_evaluation_taxonomy.svg": "6db4681551f9fbd9250c2d1cdb783ab856f55a8446f39a51b523da6b10bdb3a1",
+    "figures/11_workload_state_lifecycle.svg": "520a928aa01044cb9b6cae48b8408054fcadbee4efa6f805be54f0cfb9a362c3",
+    "figures/10_evaluation_paradigms.svg": "75ad16cf997d6d88269aa7a50a6885b0a9d84121d0ae16aede7250ecff1d915d",
     "figures/01_agentx_pareto.svg": "53b12e80bfe221ad08352cd74b11a3b666136bfd96bff601d90b876dd8a41e19",
     "figures/02_real_task_time.svg": "92cec08498ebc8a0251eff2538cf52bed911232f37546632d9f2bb5082e254f8",
     "figures/03_calls_tokens.svg": "7b14fc81283ed5cb17c747a718301a8984e44287abdece6b71f533a42efbee99",
@@ -17,8 +17,8 @@
     "figures/04_notification_valleys.svg": "af5b9084b526de55a415e46a474adf3b32f243f58d4e027ccaf51a6d8cbe4941",
     "figures/08_latest_client_control.svg": "72f12bb3a69b7e5676eb2bd27f92f68b9d495cd61c691552a2c0bbd1bc67a422"
   },
-  "pageCount": 24,
-  "outlineCount": 43,
+  "pageCount": 21,
+  "outlineCount": 42,
   "browser": "Google Chrome 151.0.7922.75",
   "renderer": "MarkdownIt + Chrome printToPDF + pypdf metadata",
   "checks": {

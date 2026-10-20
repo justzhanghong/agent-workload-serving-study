@@ -120,8 +120,8 @@ def main():
     page_text = [p.get_text() for p in extracted]
     full_text = "\n".join(page_text)
     compact = re.sub(r"\s+", "", full_text)
-    required = ["摘要","1.引言","2.相关工作","CodingAgent","WorkAgent",
-                "SWE-bench","WorkArena","TheAgentCompany","PaperBench",
+    required = ["摘要","1.引言","2.相关工作","Coding/Work",
+                "TraceLab","Copilot","CacheWise","Continuum","关键路径","状态生命周期",
                 "3.方法","4.实验","5.实验结果","6.讨论与局限","参考文献"]
     missing = [word for word in required if word not in compact]
     if missing: raise AssertionError("Missing PDF content: "+str(missing))
