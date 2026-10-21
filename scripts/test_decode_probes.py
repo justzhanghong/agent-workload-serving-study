@@ -25,6 +25,12 @@ def events():
 
 
 class Tests(unittest.TestCase):
+    def test_fixed_token_control_forwarded(self):
+        with patch.object(client,'stream_request',return_value={}) as request:
+            client.parallel('http://127.0.0.1','model',[[1,2]],256,'salt','timed',
+                            extra={'allowed_token_ids':[123]})
+        self.assertEqual(request.call_args.args[-1],{'allowed_token_ids':[123]})
+
     def test_empty_control_response(self):
         with patch.object(client.urllib.request, 'urlopen', return_value=Response(b'')):
             self.assertEqual(client.request_json('http://127.0.0.1/reset', {}),

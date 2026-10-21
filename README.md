@@ -29,7 +29,7 @@ PPD的一类基线是单向P→D；AMPD远程路径必要时读取D端历史，�
 3. E3：固定同一8卡P4+D4部署，比较后续轮次始终P→D、始终D-local与动态路由；独立校准后用相同到达计划评测，扫描增量、负载及链路。[等预算实验协议](docs/pd-routing-protocol.md)参照PPD/AMPD，不混入四卡对八卡的资源差异。
 4. E4：用实测校准模型，固定prefill方案，在可行的功耗/面积/成本约束内比较decode计算、内存及互连投入。
 
-完整依据见[报告第2.10节](paper/report.zh-CN.md)，输入、指标、独立重复和四组实验协议见同报告第3.6节。保留真实输出与轮间关系，不固定输出为1；以SLA内输出goodput及逐token尾延迟为主要判断，不能用含缓存输入的Total TPGS代替decode效率。尚无目标规格时只做参数化分析，不给出未经验证的GB或TB/s要求。E1已完成独立稀疏attention微基准，其余整模型、容量恢复、PD和建模结果仍待执行/核验，不能当作完成。
+完整依据见[报告第2.10节](paper/report.zh-CN.md)，输入、指标、独立重复和四组实验协议见同报告第3.6节。保留真实输出与轮间关系，不固定输出为1；以SLA内输出goodput及逐token尾延迟为主要判断，不能用含缓存输入的Total TPGS代替decode效率。尚无目标规格时只做参数化分析，不给出未经验证的GB或TB/s要求。E1已完成独立稀疏attention，以及整模型TP4理论对齐/核心频率/profile的部分验证；HBM有效干预、容量恢复、PD和校准建模仍待验证，不能整体当作完成。
 
 实施范围：新增整模型实验以V4.1/V4的瓶颈条件为目标；非PD与PD两端均基于B200，结论注明平台。动态路由采用等硬件预算，独立的算子微基准不当作整模型或ASIC性能。实验完成、数据核验后再更新下方结果。
 
@@ -38,6 +38,24 @@ PPD的一类基线是单向P→D；AMPD远程路径必要时读取D端历史，�
 ![独立稀疏attention的时间与DRAM读取](figures/12_decode_sparse_microbench.png)
 
 单张B200、固定top-k的FlashMLA稀疏attention中，NVFP4降低了实测DRAM读取量，却没有相应降低接口耗时。例如L=65,536、B=48时，读取量由约22.22 MB降至16.02 MB；这不能直接外推为整模型或Mega后端结论。9次独立进程、108个形状测点和24个独立硬件计数器样本见[数据与范围](tables/decode_sparse_microbench.md)。这项结果支持继续测算子并行度、实现开销及整模型各阶段，而不是只按KV字节数推导加速。
+
+### 四卡验证：理论中的HBM占比，不等于已证明带宽优先
+
+![V4.1四卡理论与实测验证](figures/13_decode_theory_tp4.png)
+
+| 假说 | 本轮判断 |
+|---|---|
+| 原公式在TP4下仍以已计HBM需求为主 | 支持公式内的条件判断；需求时间不是实测利用率 |
+| 已计需求足以代表完整decode延迟及开销构成 | 不支持直接等同；整模型还包含mHC、通信及大量小kernel等路径 |
+| 增加HBM带宽一定比增加计算更有价值 | 尚未验证；HBM调频未生效，核心频率也不是单独控制Tensor Core |
+
+3次全新服务共48个测点（42个正常计时、6个独立profiler），另用1个服务的3个block、18个固定输出token测点核对核心敏感性。正常生成在temperature=0下仍出现输出序列差异，因此不把“同输出长度”写成“同生成内容”；补充组明确限制并核验256个输出token，不能混作自然生成或3次独立服务。
+
+固定token控制中，实际SM频率1852→1200 MHz后，BS1/65536与BS64/8192的每步耗时分别由5.971→8.457 ms、7.296→11.018 ms，3个block配对增加均值为41.70%、50.97%。核心频率敏感不等于已证明Tensor Core算力瓶颈。
+
+固定版本来源、全部数值和边界见[结果表](tables/decode_theory_tp4.md)、[协议](docs/decode-theory-tp4-protocol.md)及[报告第5.10节](paper/report.zh-CN.md)。本轮没有P/D分离或目标芯片实测，也没有证明“HBM不重要”或“Tensor Core算力不足”。
+
+可确定需要补入资源模型的项包括mHC：BS1/65536下，rank0三次独立profile累计mHC kernel约1.776 ms/步；这是profiler模式，不与正常计时求占比。通信kernel的波动很大，还不能据其累计时间认定互连带宽不足。
 
 ## 多轮Workload研究：应分析什么
 
@@ -195,12 +213,16 @@ V4.1在C4、正常缓存下，仅将`FULL_AND_PIECEWISE`切为`FULL_DECODE_ONLY`
 - [数据说明](data/README.md)、[证据指纹](data/provenance.json)
 - [AgentX 汇总](tables/agentx_summary.md)、[完整分位数](tables/agentx_percentiles.md)、[有效数据集](tables/dataset.md)
 - [真实任务耗时与占比](tables/real_tasks.md)、[调用与 Token](tables/calls_tokens.md)
+- [稀疏attention验证](tables/decode_sparse_microbench.md)、[四卡理论与实测](tables/decode_theory_tp4.md)
 - [环境与版本](docs/environment.md)、[消融补充](docs/ablations.md)、[复现范围](docs/reproducibility.md)
 
 ```bash
 python3 scripts/analyze.py
 python3 -m pip install -r requirements.txt
 python3 scripts/plot.py
+python3 scripts/plot_decode_microbench.py
+python3 scripts/plot_decode_theory.py
+python3 scripts/summarize_decode_theory.py
 python3 scripts/verify.py
 ```
 

@@ -14,6 +14,8 @@
 | notification_control.json | 最新客户端通知对照的六次请求数值，不含请求正文 |
 | provenance.json | 九个输入文件的 SHA256，以及受控原始证据的内容指纹 |
 | literature.json | 23项多轮Workload/系统研究、工具与硬件方法，4项场景背景；不是实验结果数据 |
+| decode_attention_microbench.json | 独立B200稀疏attention的108个形状测点、24个另采NCU样本；不代表Mega或整模型 |
+| decode_theory_tp4.json | 3次服务的48个TP4测点与24份rank profile汇总，另1服务内18个固定token控制；无有效HBM调频 |
 
 AgentX 中 `ttft`、`tpot` 的单位均为 ms，`isl`、`osl` 为 token，`cacheHit` 为请求级百分比，`cacheHitPercent` 为全局 token 加权百分比。吞吐由运行总量与完整回放时间计算，不是请求分位数。分位数使用线性插值，因此 token 分位数原始值可以为小数；展示表四舍五入为整数，不改变原数据。
 
@@ -24,3 +26,7 @@ AgentX 中 `ttft`、`tpot` 的单位均为 ms，`isl`、`osl` 为 token，`cache
 `evidence.requestsSha256`、`evidence.manifestSha256` 是原始请求指标文件和清单的内容指纹，不是公开文件下载地址。原始日志由实验所有者受控保管，仓库只能复现数值分析和图表，不能从长度合成输入恢复真实代码语义，也不能独立复验未公开题目的正确性。
 
 文献目录研究Coding / Work场景下的多轮负载，不是Agent能力或题库综述。`scope`区分核心研究与场景背景，`focusGroups`按轨迹、KV状态、调度接口和跨层资源分组。目录生成索引及书目，不修改九项原实验输入或证据指纹。检索日、原稿版本及方法边界随目录保存，不能把文献中的优化收益当成本地复现实测。
+
+新增TP4的`stepMs`是实际匹配generation batch的后端迭代elapsed_ms，不是纯GPU时间或客户端TPOT。`summaries`对3次独立服务的步骤均值再汇总；`fixedTokenCases`则来自1个额外服务内3个block，不能当作3次独立服务。正常生成输出序列不同的事实保存在`frequencyComparisons`，受限输出的实际序列一致性另存`fixedTokenComparisons`。
+
+`requestedMemoryMHz=3402`不代表调频生效：本轮相应测点`memoryInterventionValid=false`，实际仍3996 MHz。profile的kernel duration之和可能重叠，活动时间按区间并集计算，不作墙钟占比分解。理论字段为固定main提交、未校准且不完整的已计需求，不是硬件利用率或完整延迟预测。各项原始指纹只证明材料对应关系，不公开原始trace、token或部署拓扑。

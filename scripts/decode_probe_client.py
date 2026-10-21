@@ -115,11 +115,11 @@ def stream_request(url, model, tokens, output, salt, ident, barrier=None, stop=N
     return row
 
 
-def parallel(url, model, prompts, output, salt, stage, stop=None, barrier=True):
+def parallel(url, model, prompts, output, salt, stage, stop=None, barrier=True, extra=None):
     gate = threading.Barrier(len(prompts)) if barrier else None
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(prompts)) as pool:
         futures = [pool.submit(stream_request, url, model, tokens, output, salt,
-                               f'{salt}-{stage}-{i}', gate, stop) for i, tokens in enumerate(prompts)]
+                               f'{salt}-{stage}-{i}', gate, stop, extra) for i, tokens in enumerate(prompts)]
         return [f.result() for f in futures]
 
 
@@ -162,7 +162,9 @@ def main():
             if config.get('profile'):
                 result['start_profile'] = request_json(base + '/start_profile', {})
             timed = parallel(base, model, [t + prompt(append, seed + 10000 + i) for i, t in enumerate(active)],
-                             config.get('output_tokens', 128), salt, 'timed')
+                             config.get('output_tokens', 128), salt, 'timed',
+                             extra=({'allowed_token_ids':[config['fixed_output_token_id']]}
+                                    if config.get('fixed_output_token_id') is not None else None))
             result['rows'].extend(dict(r, stage='timed') for r in timed)
             if config.get('profile'):
                 result['stop_profile'] = request_json(base + '/stop_profile', {})

@@ -215,6 +215,43 @@ def main():
                 close(val,agg[stat],'counter aggregation '+name+' '+stat)
     require(len(decode['evidenceSha256']) == 33 and all(re.fullmatch('[a-f0-9]{64}',v) for v in decode['evidenceSha256'].values()), '33 raw micro/counter artifact fingerprints')
     require('### 5.9.' in report and '不是整模型利用率' in report and '尚未完成' in report, 'microbenchmark scope and incomplete full-model attribution explicit')
+    tp4 = load('decode_theory_tp4.json')
+    require(tp4['status']=='complete' and tp4['gpus']==tp4['tp']==tp4['ep']==4, 'complete four-card TP4/EP4 theory validation')
+    require(tp4['theoryCommit']=='f2b5d167a75c2bb6a4b9385d2fd2de30f6b5278a', 'theory pinned to main, not dirty BS8 worktree')
+    require(tp4['vllmVersion']==decode['vllmVersion'], 'full-model and standalone runtime version')
+    require(len(tp4['cases'])==48 and len(tp4['profiles'])==24, '48 service probes and 24 separate rank profiles')
+    require(tp4['fixedTokenStatus']=='complete' and len(tp4['fixedTokenCases'])==18, '18 fixed-token control cases complete')
+    require(tp4['fixedTokenProtocol']['independentServices']==1 and tp4['fixedTokenProtocol']['withinServiceBlocks']==3, 'fixed-token blocks not mislabeled independent services')
+    require(len(tp4['frequencyComparisons'])==len(tp4['fixedTokenComparisons'])==6, 'six primary and six fixed-token comparisons')
+    for row in tp4['fixedTokenComparisons']:
+        require(row['identicalInputs'] and row['identicalGeneratedOutputs'], 'fixed-token inputs and actual output sequences agree')
+        close(row['increasePercent'],100*(row['lowerCoreStepMs']/row['referenceStepMs']-1),'fixed-token paired clock effect')
+    for n in (8192,65536,131072):
+        summary=next(r for r in tp4['summaries'] if r['label']=='theory_bs1' and r['inputTokens']==n)
+        model=sum(r['block_known_ms'] or 0 for r in tp4['theory'] if r['inputTokens']==n)
+        measured=summary['stepMs']
+        require(f"| {n} | {model:.3f} | {measured['mean']:.3f} | {measured['min']:.3f}–{measured['max']:.3f} |" in report, 'TP4 primary table matches data')
+    require(all(r['identicalInputs'] and not r['identicalGeneratedOutputs'] for r in tp4['frequencyComparisons']), 'natural-output nondeterminism retained, not hidden')
+    require(sum(not r['profile'] for r in tp4['cases'])==42, '42 unprofiled cases, not 48 latency repetitions')
+    for summary in tp4['summaries']:
+        require(len(summary['runStepMeansMs'])==summary['stepMs']['count']==3, 'three fresh-service means per shape')
+        for key,val in (('mean',statistics.fmean(summary['runStepMeansMs'])),('min',min(summary['runStepMeansMs'])),('max',max(summary['runStepMeansMs']))):
+            close(summary['stepMs'][key],val,'TP4 across-service aggregation '+key)
+    for case in tp4['cases']+tp4['fixedTokenCases']:
+        require(case['pureDecodeSteps']>=16 and case['cachedTokensPerRequest']==case['inputTokens']-128, 'matched batch and cached synthetic shape')
+        require(len(case['clocks'])==4, 'four-device in-decode telemetry')
+        require(all(c['memoryMHz']['min']==c['memoryMHz']['max']==3996 for c in case['clocks']), 'actual HBM clock never changed')
+        if case['condition']=='memory3402':
+            require(not case['memoryClockRequestApplied'] and not case['memoryInterventionValid'], 'unsupported HBM intervention not misreported as valid')
+        if case['condition']=='core1200':
+            require(all(c['smMHz']['min']==c['smMHz']['max']==1200 for c in case['clocks']), 'low core clock verified, not inferred from command exit code')
+    for profile in tp4['profiles']:
+        require(profile['decodeSteps']==8, 'per-stream duplicate ranges deduplicated into eight decode steps')
+        require(0<profile['activityUnionMs']<=profile['spanMs'] and profile['kernelUnionMs']<=profile['activityUnionMs']+1e-6, 'profile activity union fits span')
+        close(sum(profile['kernelGroupsMs'].values()),profile['kernelDurationSumMs'],'kernel group sums, not wall-time shares')
+    require(all(re.fullmatch('[a-f0-9]{64}',v) for v in tp4['evidenceSha256'].values()), 'TP4 raw evidence fingerprints')
+    require('### 5.10.' in report and 'HBM调频未生效' in report and 'Tensor Core算力瓶颈' in report, 'TP4 findings and attribution boundaries in report')
+    require('figures/13_decode_theory_tp4.png' in readme, 'TP4 theory verification featured in README')
     for axis in ("循环与阶段","上下文演化","缓存与重算","间隔与状态","整任务关键路径","控制面与工具冗余","资源与阶段耦合","并发与有效收益"):
         require(axis in readme and axis in report, axis+" workload question in README/report")
     require(readme.index("figures/09_") < readme.index("figures/01_"), "literature before experimental figure in README")
@@ -246,7 +283,7 @@ def main():
     require(pdf_manifest["sourceSha256"] == hashlib.sha256((ROOT/pdf_manifest["source"]).read_bytes()).hexdigest(), "PDF source Markdown synchronized")
     require(pdf_manifest["pdfSha256"] == hashlib.sha256(pdf_path.read_bytes()).hexdigest(), "PDF file fingerprint")
     require(pdf_manifest["pageCount"] > 10 and pdf_manifest["outlineCount"] >= 40 and all(pdf_manifest["checks"].values()), "PDF build content/layout checks recorded")
-    require(len(pdf_manifest["embeddedFiguresSha256"]) == 12, "all 12 figures embedded in PDF")
+    require(len(pdf_manifest["embeddedFiguresSha256"]) == 13, "all 13 figures embedded in PDF")
     for name, expected in pdf_manifest["embeddedFiguresSha256"].items():
         require(expected == hashlib.sha256((ROOT/name).read_bytes()).hexdigest(), name+" PDF figure synchronized")
     require(all(f"## {i}. {name}" in report for i,name in enumerate(["引言","相关工作","方法","实验","实验结果"],1)), "required paper sections")
@@ -285,12 +322,13 @@ def main():
             require(not re.search(r'"(?:messages|content|checkpoint|workspaceId|api_base|request_id|tool_use_id)"\s*:',text), path.name+" no raw message/deployment fields")
     pngs = sorted((ROOT/"figures").glob("*.png"))
     svgs = sorted((ROOT/"figures").glob("*.svg"))
-    require(len(pngs) == len(svgs) == 12, "9 experimental and 3 survey PNG/SVG pairs")
+    require(len(pngs) == len(svgs) == 13, "10 experimental and 3 survey PNG/SVG pairs")
     require({p.stem for p in pngs} == {p.stem for p in svgs}, "matching figure pairs")
     for path in pngs:
         require(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") and path.stat().st_size > 10000, path.name+" valid nontrivial PNG")
     fingerprints = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.rglob("*")) if p.is_file() and p.name != "verification.json" and not any(part in EXCLUDED for part in p.relative_to(ROOT).parts)}
-    result = {"date":"2026-10-20", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":23,"scenarioBackgroundWorks":4,"plannedDecodeExperiments":4,"decodeKernelProcesses":9,"decodeKernelCases":108,"decodeCounterSamples":24,"fullModelDecodeAttributionComplete":False,"figurePairs":12,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence including standalone B200 kernel probes, workload/hardware review, equal-budget routing protocol and report/PDF consistency; not an independent raw-source audit or completion of full-model E1/E2/E3/E4", "filesSha256":fingerprints}
+    result = {"date":"2026-10-21", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":23,"scenarioBackgroundWorks":4,"plannedDecodeExperiments":4,"decodeKernelProcesses":9,"decodeKernelCases":108,"decodeCounterSamples":24,"tp4TheoryValidationCases":48,"tp4NormalTimingCases":42,"tp4RankProfiles":24,"validHBMFrequencyInterventions":0,"fullModelDecodeAttributionComplete":False,"figurePairs":13,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence including standalone B200 kernels and TP4 full-model theory/core-frequency validation, workload/hardware review, equal-budget routing protocol and report/PDF consistency; not an independent raw-source audit, valid HBM intervention, or completion of full E1/E2/E3/E4", "filesSha256":fingerprints}
+    result.update(tp4PrimaryServices=3,fixedTokenControlCases=18,fixedTokenControlServices=1,fixedTokenControlBlocks=3)
     (ROOT/"verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k != "filesSha256"},ensure_ascii=False))
 

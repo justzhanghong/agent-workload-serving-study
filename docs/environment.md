@@ -27,6 +27,12 @@ Qwen 的已记录启动参数包括 BF16、上下文 262144、`max-num-batched-t
 
 V4.1 的 C4 Graph 消融保持模型、镜像、TP4/EP4、Mega Attention、`nvfp4_ds_mla` KV 格式等参数不变，改变 `FULL_AND_PIECEWISE`/`FULL_DECODE_ONLY`。使用 vLLM `0.29.1rc1.dev573+ge97573215`。服务端首次调度到首 token 的统计边界见正文第3节，不是纯 kernel 时间。
 
+## 新增TP4资源配比验证
+
+沿用DeepSeek镜像`f75fec992c293dd41042745f8aa71bfdf12b188b6a01e0baf075e4bca5d297e5`，vLLM `0.29.1rc1.dev573+ge97573215`。B200×4、TP4/EP4，Python前端、Mega、NVFP4主KV/FP8索引、128-token block、`FULL_AND_PIECEWISE`，max-num-seqs=256，capture上限64，上下文上限262144。它与早期AgentX上下文上限不同，不混作原回放新增重复。
+
+理论固定到model_analysis main的`f2b5d167a75c2bb6a4b9385d2fd2de30f6b5278a`，不使用服务器上未提交的BS8公式。资源速率假设不是校准后的设备性能。核心请求1965 MHz、实测约1852 MHz；低核心实际1200 MHz；即时HBM锁频不支持，实测一直3996 MHz。计时、独立profile与固定输出控制的不同重复单位见[协议](decode-theory-tp4-protocol.md)。
+
 ## 新版客户端的独立行为验证
 
 | 项目 | 核验值 |

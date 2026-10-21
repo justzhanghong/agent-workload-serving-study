@@ -34,7 +34,23 @@ PDF的唯一正文来源为`paper/report.zh-CN.md`，使用同名SVG嵌入报告
 
 ## Decode芯片方案的复现边界
 
-[报告第2.10节与第3.6节](../paper/report.zh-CN.md)新增文献机制和E1～E4实验设计。本次只更新文献、分析方法及正文，未运行这些实验，未提供目标ASIC规格、模拟结果或新GPU测点。上述离线命令只能重建报告与既有实验图，不能执行芯片瓶颈实验。
+[报告第2.10节与第3.6节](../paper/report.zh-CN.md)给出文献机制和E1～E4实验设计。E1已增加独立稀疏attention计时/计数器，以及整模型TP4理论对齐、核心频率敏感性和独立profile；它们不等于完成全部E1，更不等于完成E2状态恢复、E3等预算PD或E4芯片设计空间。没有提供目标ASIC规格或ASIC实测结果。
+
+已发布新数据可离线重建：
+
+```bash
+python3 scripts/plot_decode_microbench.py
+python3 scripts/plot_decode_theory.py
+python3 scripts/summarize_decode_theory.py
+python3 scripts/test_decode_probes.py
+python3 scripts/test_decode_theory.py
+python3 scripts/build_pdf.py
+python3 scripts/verify.py
+```
+
+TP4实验使用固定到main具体提交的部分理论，3次全新服务共48个测点，其中42个正常计时、6个独立profiler；另用1个新服务内3个block补18个固定输出token测点，不混作3次独立服务。24份逐rank trace汇总、逐组输出一致性检查与原始指纹见`data/decode_theory_tp4.json`。HBM调频命令未生效，6个相应测点保留为无效干预，不能计算HBM弹性。[详细协议](decode-theory-tp4-protocol.md)说明实际频率核验、匹配batch和重叠处理。
+
+原材料所有者可用`analyze_decode_theory.py --root <原始实验目录> --output <脱敏输出JSON>`重新导出；默认拒绝未完成实验，`--allow-partial`仅供运行中诊断，不用于发布。`analyze_decode_microbench.py`导出独立单算子与计数器数据。原始日志/trace仍非公开材料；脚本和指纹不能取代第三方原始证据审计。
 
 后续实施需先确认模型/注意力架构、精度、prefill芯片接口和可用内存/互连约束，补充细粒度profiling与状态恢复记录，再校准或扩展模拟器。LLMCompass与HeteroPanacea仅为方法参考，不声称本仓库已集成这些工具或复现论文收益。校验脚本检查新文献和计划状态的一致性，不替代外部论文核验、硬件预测验证或任务质量验收。
 
@@ -53,6 +69,8 @@ PDF的唯一正文来源为`paper/report.zh-CN.md`，使用同名SVG嵌入报告
 | 09_evaluation_taxonomy | Coding / Work多轮负载的八项分析轴 | 文献方法归纳，不是Agent能力分类或新增实验 |
 | 10_evaluation_paradigms | 固定回放、自主执行、全栈关联 | 决策闭环与负载闭环不是同一变量 |
 | 11_workload_state_lifecycle | 运行/等待/恢复、三类状态与harness/engine信息 | 分析示意，不声称已在本地接入卸载或协同策略 |
+| 12_decode_sparse_microbench | 独立稀疏attention接口时间与主kernel DRAM读取 | 不是Mega或整模型；两个采集协议不混为同一计时 |
+| 13_decode_theory_tp4 | 部分理论、四卡整模型核心频率敏感性及独立profile | HBM干预未生效；核心敏感不等于Tensor Core瓶颈 |
 
 ## 所有者从原材料重新导出
 
@@ -62,6 +80,6 @@ PDF的唯一正文来源为`paper/report.zh-CN.md`，使用同名SVG嵌入报告
 
 ## 校验与证据强度
 
-校验脚本检查15点的固定有效样本和上下文规则、2349请求对账、状态数量、区间分解、辅助调用及事件计数、Graph逐数值对的汇总、历史三轮差值、通知行为对照、正文关键表格、文献分组与引用、内部链接、11组图像、PDF同源指纹和发布内容脱敏。
+校验脚本检查15点的固定有效样本和上下文规则、2349请求对账、状态数量、区间分解、辅助调用及事件计数、Graph逐数值对的汇总、历史三轮差值、通知行为对照、单算子计时/计数器、TP4测点及实际频率、profile区间并集、正文关键表格、文献分组与引用、内部链接、13组图像、PDF同源指纹和发布内容脱敏。
 
 该校验验证“仓库数值与报告之间的一致性”，不是对私有原始采集的第三方独立认证。原始验收、客户端消息语义和软件安装身份的审计证据由原实验所有者保管；正文准确注明其范围和缺口。

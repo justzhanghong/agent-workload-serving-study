@@ -1,9 +1,9 @@
 {
   "date": "2026-10-20",
   "source": "paper/report.zh-CN.md",
-  "sourceSha256": "8d411e173789a886d276578ba7a771c5fa2861d662e0d6abec81f5178f038f5c",
+  "sourceSha256": "86ccc43f6b66c1816a25c77017b898c2a327f3932bac7201e6c779a5acca7259",
   "pdf": "paper/report.zh-CN.pdf",
-  "pdfSha256": "c233761f9b440ecb0695b28e2aabf841ead6ea1c0601b33500deafc09ba1d596",
+  "pdfSha256": "4da6ddd7881a28d1ea072d3c1aedc8b1b18668a067f35f81f5d20559caa52565",
   "embeddedFiguresSha256": {
     "figures/09_evaluation_taxonomy.svg": "6db4681551f9fbd9250c2d1cdb783ab856f55a8446f39a51b523da6b10bdb3a1",
     "figures/11_workload_state_lifecycle.svg": "520a928aa01044cb9b6cae48b8408054fcadbee4efa6f805be54f0cfb9a362c3",
@@ -16,10 +16,11 @@
     "figures/06_cache_condition.svg": "48a656de638d3e8f100077fe387606792f04e1481d25074cbd29d9629a27c9f8",
     "figures/04_notification_valleys.svg": "af5b9084b526de55a415e46a474adf3b32f243f58d4e027ccaf51a6d8cbe4941",
     "figures/08_latest_client_control.svg": "72f12bb3a69b7e5676eb2bd27f92f68b9d495cd61c691552a2c0bbd1bc67a422",
-    "figures/12_decode_sparse_microbench.svg": "952eef5a626c65fd603a54b96c936311d8c128dc763c6da35df195c887fd3283"
+    "figures/12_decode_sparse_microbench.svg": "952eef5a626c65fd603a54b96c936311d8c128dc763c6da35df195c887fd3283",
+    "figures/13_decode_theory_tp4.svg": "f04525605e9afa16f96ed601e2052d2d2c38ba690ab15a59f032c709f21924a4"
   },
-  "pageCount": 26,
-  "outlineCount": 50,
+  "pageCount": 27,
+  "outlineCount": 51,
   "browser": "Google Chrome 151.0.7922.75",
   "renderer": "MarkdownIt + Chrome printToPDF + pypdf metadata",
   "checks": {
