@@ -34,7 +34,7 @@ PDF的唯一正文来源为`paper/report.zh-CN.md`，使用同名SVG嵌入报告
 
 ## Decode芯片方案的复现边界
 
-[报告第2.10节与第3.6节](../paper/report.zh-CN.md)给出文献机制和E1～E4实验设计。E1已增加独立稀疏attention计时/计数器，以及整模型TP4理论对齐、核心频率敏感性和独立profile；它们不等于完成全部E1，更不等于完成E2状态恢复、E3等预算PD或E4芯片设计空间。没有提供目标ASIC规格或ASIC实测结果。
+[报告第2.10节与第3.6节](../paper/report.zh-CN.md)给出文献机制和E1～E4实验设计。E1已增加独立稀疏attention计时/计数器，以及整模型单次合成请求的TP4理论对齐、核心频率敏感性和独立profile；它们不构成多轮Agent瓶颈验证，更不等于完成E2状态恢复、E3等预算PD或E4芯片设计空间。多轮主实验约束见[独立协议](multiturn-agent-validation-protocol.md)。没有提供目标ASIC规格或ASIC实测结果。
 
 已发布新数据可离线重建：
 

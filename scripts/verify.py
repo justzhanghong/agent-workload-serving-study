@@ -252,6 +252,11 @@ def main():
     require(all(re.fullmatch('[a-f0-9]{64}',v) for v in tp4['evidenceSha256'].values()), 'TP4 raw evidence fingerprints')
     require('### 5.10.' in report and 'HBM调频未生效' in report and 'Tensor Core算力瓶颈' in report, 'TP4 findings and attribution boundaries in report')
     require('figures/13_decode_theory_tp4.png' in readme, 'TP4 theory verification featured in README')
+    multi_protocol=(ROOT/'docs/multiturn-agent-validation-protocol.md').read_text()
+    require('主实验必须' in report and '不构成多轮Agent假说验证' in report and '不是多轮Agent假说验证' in readme,
+            'single-request diagnostics not misrepresented as multi-turn Agent validation')
+    for term in ('512','443423','C16','C56','真实工具等待','不限制生成内容','执行状态必须区分','单轮'):
+        require(term in multi_protocol, 'multi-turn workload protocol constraint '+term)
     for axis in ("循环与阶段","上下文演化","缓存与重算","间隔与状态","整任务关键路径","控制面与工具冗余","资源与阶段耦合","并发与有效收益"):
         require(axis in readme and axis in report, axis+" workload question in README/report")
     require(readme.index("figures/09_") < readme.index("figures/01_"), "literature before experimental figure in README")
@@ -328,7 +333,9 @@ def main():
         require(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") and path.stat().st_size > 10000, path.name+" valid nontrivial PNG")
     fingerprints = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.rglob("*")) if p.is_file() and p.name != "verification.json" and not any(part in EXCLUDED for part in p.relative_to(ROOT).parts)}
     result = {"date":"2026-10-21", "passed":True, "checks":len(CHECKS), "replayRuns":15, "realCases":12, "formalRequests":2349, "coreWorkloadWorks":23,"scenarioBackgroundWorks":4,"plannedDecodeExperiments":4,"decodeKernelProcesses":9,"decodeKernelCases":108,"decodeCounterSamples":24,"tp4TheoryValidationCases":48,"tp4NormalTimingCases":42,"tp4RankProfiles":24,"validHBMFrequencyInterventions":0,"fullModelDecodeAttributionComplete":False,"figurePairs":13,"pdfPages":pdf_manifest["pageCount"], "independentRawEvidenceAudit":False, "scope":"Released numeric evidence including standalone B200 kernels and TP4 full-model theory/core-frequency validation, workload/hardware review, equal-budget routing protocol and report/PDF consistency; not an independent raw-source audit, valid HBM intervention, or completion of full E1/E2/E3/E4", "filesSha256":fingerprints}
-    result.update(tp4PrimaryServices=3,fixedTokenControlCases=18,fixedTokenControlServices=1,fixedTokenControlBlocks=3)
+    result.update(tp4PrimaryServices=3,fixedTokenControlCases=18,fixedTokenControlServices=1,fixedTokenControlBlocks=3,
+                  tp4EvidenceIsSingleRequestSynthetic=True,multiTurnAgentBottleneckValidationComplete=False)
+    result['scope']+='; TP4 synthetic single-request diagnostics are not multi-turn Agent hypothesis validation'
     (ROOT/"verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k != "filesSha256"},ensure_ascii=False))
 
